@@ -162,9 +162,12 @@ public class ValidatingDeserializer extends DelegatingDeserializer {
 		// 1. Check direct "properties" node
 		JsonNode propertiesNode = currentNode.get("properties");
 		if (propertiesNode != null && propertiesNode.isObject()) {
-			propertiesNode.fieldNames().forEachRemaining(properties::add);
-			log.debug("Found properties in direct 'properties' node: {}",
-				propertiesNode.fieldNames().hasNext() ? propertiesNode.fieldNames() : "none");
+			List<String> foundProperties = new ArrayList<>();
+			propertiesNode.fieldNames().forEachRemaining(foundProperties::add);
+			properties.addAll(foundProperties);
+			if (!foundProperties.isEmpty()) {
+				log.debug("Found properties in direct 'properties' node: {}", foundProperties);
+			}
 		}
 
 		// 2. Check "definitions" node (recursively check each definition)
@@ -210,7 +213,7 @@ public class ValidatingDeserializer extends DelegatingDeserializer {
 	 * Currently supports JSON Pointer references within the same document (#/definitions/foo).
 	 */
 	private JsonNode resolveRef(JsonNode rootNode, String ref) {
-		if (ref == null || !ref.startsWith("#/")) {
+		if (ref == null || !ref.startsWith("#/") || ref.length() <= 2) {
 			log.debug("Skipping external or invalid reference: {}", ref);
 			return null;
 		}
@@ -222,6 +225,10 @@ public class ValidatingDeserializer extends DelegatingDeserializer {
 		for (String part : pathParts) {
 			if (current == null) {
 				return null;
+			}
+			// Skip empty parts (shouldn't happen with valid JSON Pointer)
+			if (part.isEmpty()) {
+				continue;
 			}
 			// Handle escaped characters in JSON Pointer (~ and /)
 			part = part.replace("~1", "/").replace("~0", "~");
