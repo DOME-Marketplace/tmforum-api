@@ -7,14 +7,16 @@ import io.micronaut.test.annotation.MockBean;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.fiware.document.api.DocumentSpecificationApiTestClient;
 import org.fiware.document.api.DocumentSpecificationApiTestSpec;
-import org.fiware.document.model.DocumentSpecificationCreateVO;
-import org.fiware.document.model.DocumentSpecificationVO;
 import org.fiware.document.model.AttachmentRefOrValueVO;
+import org.fiware.document.model.DocumentSpecificationCreateVO;
+import org.fiware.document.model.DocumentSpecificationStatusTypeVO;
+import org.fiware.document.model.DocumentSpecificationVO;
 import org.fiware.ngsi.api.EntitiesApiClient;
 import org.fiware.tmforum.common.configuration.GeneralProperties;
+import org.fiware.tmforum.common.exception.ErrorDetails;
 import org.fiware.tmforum.common.notification.TMForumEventHandler;
 import org.fiware.tmforum.common.test.AbstractApiIT;
-import org.fiware.tmforum.documentmanagement.s3.S3AttachmentService;
+import org.fiware.tmforum.documentmanagement.domain.DocumentSpecification;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,6 +27,7 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,7 +41,7 @@ public class DocumentSpecificationApiIT extends AbstractApiIT implements Documen
     public final DocumentSpecificationApiTestClient documentSpecificationApiTestClient;
 
     private String message;
-    private DocumentSpecificationCreateVO createVO;
+    private DocumentSpecificationCreateVO documentSpecificationCreateVO;
     private DocumentSpecificationVO expectedDocSpec;
 
     public DocumentSpecificationApiIT(
@@ -52,7 +55,7 @@ public class DocumentSpecificationApiIT extends AbstractApiIT implements Documen
 
     @Override
     protected String getEntityType() {
-        return "document-specification";
+        return DocumentSpecification.TYPE_DOCUMENT_SPECIFICATION;
     }
 
     @MockBean(TMForumEventHandler.class)
@@ -63,26 +66,50 @@ public class DocumentSpecificationApiIT extends AbstractApiIT implements Documen
         return eventHandler;
     }
 
+    @ParameterizedTest
+    @MethodSource("provideValidDocumentSpecifications")
+    public void createDocumentSpecification201(String message, DocumentSpecificationCreateVO createVO,
+                                                DocumentSpecificationVO expectedDocSpec) throws Exception {
+        this.message = message;
+        this.documentSpecificationCreateVO = createVO;
+        this.expectedDocSpec = expectedDocSpec;
+        createDocumentSpecification201();
+    }
+
     @Override
     public void createDocumentSpecification201() throws Exception {
-        // Test basic creation
-        DocumentSpecificationCreateVO createVO = new DocumentSpecificationCreateVO();
-        createVO.setName("Test Document Specification");
-        createVO.setDescription("A test document specification");
-        createVO.setVersion("1.0.0");
-
         HttpResponse<DocumentSpecificationVO> response = callAndCatch(
-                () -> documentSpecificationApiTestClient.createDocumentSpecification(null, createVO));
+                () -> documentSpecificationApiTestClient.createDocumentSpecification(null, documentSpecificationCreateVO));
 
-        assertEquals(HttpStatus.CREATED, response.getStatus());
-        assertNotNull(response.body());
-        assertNotNull(response.body().getId());
-        assertEquals("Test Document Specification", response.body().getName());
+        assertEquals(HttpStatus.CREATED, response.getStatus(), message);
+        assertNotNull(response.body(), message);
+        assertNotNull(response.body().getId(), message);
+        assertEquals(expectedDocSpec.getName(), response.body().getName(), message);
+    }
+
+    private static Stream<Arguments> provideValidDocumentSpecifications() {
+        List<Arguments> testEntries = new ArrayList<>();
+
+        DocumentSpecificationCreateVO simpleCreateVO = new DocumentSpecificationCreateVO();
+        simpleCreateVO.setName("Test Document Specification");
+        simpleCreateVO.setDescription("A test document specification");
+        simpleCreateVO.setVersion("1.0.0");
+        DocumentSpecificationVO simpleExpected = new DocumentSpecificationVO();
+        simpleExpected.setName("Test Document Specification");
+        testEntries.add(Arguments.of("A simple document specification should be created.", simpleCreateVO, simpleExpected));
+
+        DocumentSpecificationCreateVO withLifecycleVO = new DocumentSpecificationCreateVO();
+        withLifecycleVO.setName("Document with Lifecycle");
+        withLifecycleVO.setLifecycleStatus(DocumentSpecificationStatusTypeVO.APPROVED);
+        DocumentSpecificationVO lifecycleExpected = new DocumentSpecificationVO();
+        lifecycleExpected.setName("Document with Lifecycle");
+        testEntries.add(Arguments.of("A document specification with lifecycle status should be created.", withLifecycleVO, lifecycleExpected));
+
+        return testEntries.stream();
     }
 
     @Test
     public void createDocumentSpecificationWithAttachment201() throws Exception {
-        // Test creation with attachment
         DocumentSpecificationCreateVO createVO = new DocumentSpecificationCreateVO();
         createVO.setName("Document with Attachment");
         createVO.setVersion("1.0.0");
@@ -96,7 +123,7 @@ public class DocumentSpecificationApiIT extends AbstractApiIT implements Documen
         HttpResponse<DocumentSpecificationVO> response = callAndCatch(
                 () -> documentSpecificationApiTestClient.createDocumentSpecification(null, createVO));
 
-        assertEquals(HttpStatus.CREATED, response.getStatus());
+        assertEquals(HttpStatus.CREATED, response.getStatus(), "Document specification with attachment should be created.");
         assertNotNull(response.body());
         assertNotNull(response.body().getAttachment());
         assertFalse(response.body().getAttachment().isEmpty());
@@ -105,6 +132,7 @@ public class DocumentSpecificationApiIT extends AbstractApiIT implements Documen
         assertTrue(content.startsWith("s3ref:"), "Content should be S3 retrieval info");
     }
 
+    @Test
     @Override
     public void createDocumentSpecification400() throws Exception {
         // Test creation with missing required field (name)
@@ -114,39 +142,41 @@ public class DocumentSpecificationApiIT extends AbstractApiIT implements Documen
         HttpResponse<DocumentSpecificationVO> response = callAndCatch(
                 () -> documentSpecificationApiTestClient.createDocumentSpecification(null, createVO));
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatus());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatus(), "Creation without name should fail.");
+
+        Optional<ErrorDetails> optionalErrorDetails = response.getBody(ErrorDetails.class);
+        assertTrue(optionalErrorDetails.isPresent(), "Error details should be provided.");
     }
 
+    @Disabled("Security is handled externally, thus 401 and 403 cannot happen.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void createDocumentSpecification401() throws Exception {
-        // Authentication not implemented
     }
 
+    @Disabled("Security is handled externally, thus 401 and 403 cannot happen.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void createDocumentSpecification403() throws Exception {
-        // Authorization not implemented
     }
 
+    @Disabled("Prohibited by the framework.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void createDocumentSpecification405() throws Exception {
-        // Method not allowed - not applicable
     }
 
+    @Disabled("DocumentSpecification doesn't have 'implicit' entities and id is generated, no conflict possible.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void createDocumentSpecification409() throws Exception {
-        // Conflict - not applicable for create
     }
 
     @Override
-    @Disabled("Not implemented")
     public void createDocumentSpecification500() throws Exception {
-        // Internal server error - hard to simulate
     }
 
+    @Test
     @Override
     public void deleteDocumentSpecification204() throws Exception {
         // First create a document specification
@@ -157,170 +187,212 @@ public class DocumentSpecificationApiIT extends AbstractApiIT implements Documen
         HttpResponse<DocumentSpecificationVO> createResponse = callAndCatch(
                 () -> documentSpecificationApiTestClient.createDocumentSpecification(null, createVO));
 
-        assertEquals(HttpStatus.CREATED, createResponse.getStatus());
+        assertEquals(HttpStatus.CREATED, createResponse.getStatus(), "The document specification should have been created first.");
         String id = createResponse.body().getId();
 
         // Then delete it
         HttpResponse<?> deleteResponse = callAndCatch(
                 () -> documentSpecificationApiTestClient.deleteDocumentSpecification(null, id));
 
-        assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getStatus());
+        assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getStatus(), "The document specification should have been deleted.");
+
+        // Verify it no longer exists
+        assertEquals(HttpStatus.NOT_FOUND,
+                callAndCatch(() -> documentSpecificationApiTestClient.retrieveDocumentSpecification(null, id, null)).getStatus(),
+                "The document specification should not exist anymore.");
     }
 
+    @Disabled("400 is impossible to happen on deletion with the current implementation.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void deleteDocumentSpecification400() throws Exception {
-        // Bad request for delete - not applicable
     }
 
+    @Disabled("Security is handled externally, thus 401 and 403 cannot happen.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void deleteDocumentSpecification401() throws Exception {
-        // Authentication not implemented
     }
 
+    @Disabled("Security is handled externally, thus 401 and 403 cannot happen.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void deleteDocumentSpecification403() throws Exception {
-        // Authorization not implemented
     }
 
+    @Test
     @Override
     public void deleteDocumentSpecification404() throws Exception {
-        HttpResponse<?> deleteResponse = callAndCatch(
+        HttpResponse<?> notFoundResponse = callAndCatch(
                 () -> documentSpecificationApiTestClient.deleteDocumentSpecification(null,
-                        "urn:ngsi-ld:document-specification:nonexistent"));
+                        "urn:ngsi-ld:document-specification:non-existent"));
 
-        assertEquals(HttpStatus.NOT_FOUND, deleteResponse.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND, notFoundResponse.getStatus(), "No such document specification should exist.");
+
+        Optional<ErrorDetails> optionalErrorDetails = notFoundResponse.getBody(ErrorDetails.class);
+        assertTrue(optionalErrorDetails.isPresent(), "Error details should be provided.");
+
+        // Also test with invalid id format
+        notFoundResponse = callAndCatch(
+                () -> documentSpecificationApiTestClient.deleteDocumentSpecification(null, "invalid-id"));
+        assertEquals(HttpStatus.NOT_FOUND, notFoundResponse.getStatus(), "Invalid ID should return not found.");
+
+        optionalErrorDetails = notFoundResponse.getBody(ErrorDetails.class);
+        assertTrue(optionalErrorDetails.isPresent(), "Error details should be provided.");
     }
 
+    @Disabled("Prohibited by the framework.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void deleteDocumentSpecification405() throws Exception {
-        // Method not allowed - not applicable
     }
 
+    @Disabled("Impossible status.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void deleteDocumentSpecification409() throws Exception {
-        // Conflict - not applicable for delete
     }
 
     @Override
-    @Disabled("Not implemented")
     public void deleteDocumentSpecification500() throws Exception {
-        // Internal server error - hard to simulate
     }
 
+    @Test
     @Override
     public void listDocumentSpecification200() throws Exception {
-        // Create a few document specifications first
-        for (int i = 0; i < 3; i++) {
+        List<DocumentSpecificationVO> expectedSpecs = new ArrayList<>();
+
+        // Create document specifications
+        for (int i = 0; i < 10; i++) {
             DocumentSpecificationCreateVO createVO = new DocumentSpecificationCreateVO();
             createVO.setName("Document " + i);
             createVO.setVersion("1.0.0");
 
-            callAndCatch(() -> documentSpecificationApiTestClient.createDocumentSpecification(null, createVO));
+            HttpResponse<DocumentSpecificationVO> createResponse = callAndCatch(
+                    () -> documentSpecificationApiTestClient.createDocumentSpecification(null, createVO));
+            assertEquals(HttpStatus.CREATED, createResponse.getStatus());
+            expectedSpecs.add(createResponse.body());
         }
 
+        // List all
         HttpResponse<List<DocumentSpecificationVO>> listResponse = callAndCatch(
                 () -> documentSpecificationApiTestClient.listDocumentSpecification(null, null, null, null));
 
-        assertEquals(HttpStatus.OK, listResponse.getStatus());
-        assertNotNull(listResponse.body());
-        assertTrue(listResponse.body().size() >= 3);
+        assertEquals(HttpStatus.OK, listResponse.getStatus(), "The list should be accessible.");
+        assertEquals(expectedSpecs.size(), listResponse.body().size(), "All document specifications should have been returned.");
+
+        // Test pagination
+        Integer limit = 5;
+        HttpResponse<List<DocumentSpecificationVO>> firstPartResponse = callAndCatch(
+                () -> documentSpecificationApiTestClient.listDocumentSpecification(null, null, 0, limit));
+        assertEquals(limit, firstPartResponse.body().size(), "Only the requested number of entries should be returned.");
+
+        HttpResponse<List<DocumentSpecificationVO>> secondPartResponse = callAndCatch(
+                () -> documentSpecificationApiTestClient.listDocumentSpecification(null, null, limit, limit));
+        assertEquals(limit, secondPartResponse.body().size(), "Only the requested number of entries should be returned.");
     }
 
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void listDocumentSpecification400() throws Exception {
-        // Bad request for list - not applicable
+        HttpResponse<List<DocumentSpecificationVO>> badRequestResponse = callAndCatch(
+                () -> documentSpecificationApiTestClient.listDocumentSpecification(null, null, -1, null));
+        assertEquals(HttpStatus.BAD_REQUEST, badRequestResponse.getStatus(), "Negative offsets are impossible.");
+
+        Optional<ErrorDetails> optionalErrorDetails = badRequestResponse.getBody(ErrorDetails.class);
+        assertTrue(optionalErrorDetails.isPresent(), "Error details should be provided.");
+
+        badRequestResponse = callAndCatch(
+                () -> documentSpecificationApiTestClient.listDocumentSpecification(null, null, null, -1));
+        assertEquals(HttpStatus.BAD_REQUEST, badRequestResponse.getStatus(), "Negative limits are impossible.");
+
+        optionalErrorDetails = badRequestResponse.getBody(ErrorDetails.class);
+        assertTrue(optionalErrorDetails.isPresent(), "Error details should be provided.");
     }
 
+    @Disabled("Security is handled externally, thus 401 and 403 cannot happen.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void listDocumentSpecification401() throws Exception {
-        // Authentication not implemented
     }
 
+    @Disabled("Security is handled externally, thus 401 and 403 cannot happen.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void listDocumentSpecification403() throws Exception {
-        // Authorization not implemented
     }
 
+    @Disabled("Not found is not possible here, will be answered with an empty list instead.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void listDocumentSpecification404() throws Exception {
-        // Not found for list - not applicable
     }
 
+    @Disabled("Prohibited by the framework.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void listDocumentSpecification405() throws Exception {
-        // Method not allowed - not applicable
     }
 
+    @Disabled("Impossible status.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void listDocumentSpecification409() throws Exception {
-        // Conflict - not applicable for list
     }
 
     @Override
-    @Disabled("Not implemented")
     public void listDocumentSpecification500() throws Exception {
-        // Internal server error - hard to simulate
     }
 
+    @Disabled("PATCH is not supported for DocumentSpecification per design requirements.")
+    @Test
     @Override
-    @Disabled("PATCH not implemented per requirements")
     public void patchDocumentSpecification200() throws Exception {
-        // PATCH is not implemented per requirements
     }
 
+    @Disabled("PATCH is not supported for DocumentSpecification per design requirements.")
+    @Test
     @Override
-    @Disabled("PATCH not implemented per requirements")
     public void patchDocumentSpecification400() throws Exception {
-        // PATCH is not implemented per requirements
     }
 
+    @Disabled("PATCH is not supported for DocumentSpecification per design requirements.")
+    @Test
     @Override
-    @Disabled("PATCH not implemented per requirements")
     public void patchDocumentSpecification401() throws Exception {
-        // PATCH is not implemented per requirements
     }
 
+    @Disabled("PATCH is not supported for DocumentSpecification per design requirements.")
+    @Test
     @Override
-    @Disabled("PATCH not implemented per requirements")
     public void patchDocumentSpecification403() throws Exception {
-        // PATCH is not implemented per requirements
     }
 
+    @Disabled("PATCH is not supported for DocumentSpecification per design requirements.")
+    @Test
     @Override
-    @Disabled("PATCH not implemented per requirements")
     public void patchDocumentSpecification404() throws Exception {
-        // PATCH is not implemented per requirements
     }
 
+    @Disabled("PATCH is not supported for DocumentSpecification per design requirements.")
+    @Test
     @Override
-    @Disabled("PATCH not implemented per requirements")
     public void patchDocumentSpecification405() throws Exception {
-        // PATCH is not implemented per requirements
     }
 
+    @Disabled("PATCH is not supported for DocumentSpecification per design requirements.")
+    @Test
     @Override
-    @Disabled("PATCH not implemented per requirements")
     public void patchDocumentSpecification409() throws Exception {
-        // PATCH is not implemented per requirements
     }
 
+    @Disabled("PATCH is not supported for DocumentSpecification per design requirements.")
+    @Test
     @Override
-    @Disabled("PATCH not implemented per requirements")
     public void patchDocumentSpecification500() throws Exception {
-        // PATCH is not implemented per requirements
     }
 
+    @Test
     @Override
     public void retrieveDocumentSpecification200() throws Exception {
         // Create a document specification
@@ -331,14 +403,14 @@ public class DocumentSpecificationApiIT extends AbstractApiIT implements Documen
         HttpResponse<DocumentSpecificationVO> createResponse = callAndCatch(
                 () -> documentSpecificationApiTestClient.createDocumentSpecification(null, createVO));
 
-        assertEquals(HttpStatus.CREATED, createResponse.getStatus());
+        assertEquals(HttpStatus.CREATED, createResponse.getStatus(), "The document specification should have been created first.");
         String id = createResponse.body().getId();
 
         // Retrieve it
         HttpResponse<DocumentSpecificationVO> retrieveResponse = callAndCatch(
                 () -> documentSpecificationApiTestClient.retrieveDocumentSpecification(null, id, null));
 
-        assertEquals(HttpStatus.OK, retrieveResponse.getStatus());
+        assertEquals(HttpStatus.OK, retrieveResponse.getStatus(), "The retrieval should be ok.");
         assertNotNull(retrieveResponse.body());
         assertEquals(id, retrieveResponse.body().getId());
         assertEquals("Document to Retrieve", retrieveResponse.body().getName());
@@ -378,48 +450,50 @@ public class DocumentSpecificationApiIT extends AbstractApiIT implements Documen
         assertEquals(originalContent, decodedContent);
     }
 
+    @Disabled("400 cannot happen, only 404")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void retrieveDocumentSpecification400() throws Exception {
-        // Bad request for retrieve - not applicable
     }
 
+    @Disabled("Security is handled externally, thus 401 and 403 cannot happen.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void retrieveDocumentSpecification401() throws Exception {
-        // Authentication not implemented
     }
 
+    @Disabled("Security is handled externally, thus 401 and 403 cannot happen.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void retrieveDocumentSpecification403() throws Exception {
-        // Authorization not implemented
     }
 
+    @Test
     @Override
     public void retrieveDocumentSpecification404() throws Exception {
-        HttpResponse<DocumentSpecificationVO> retrieveResponse = callAndCatch(
+        HttpResponse<DocumentSpecificationVO> response = callAndCatch(
                 () -> documentSpecificationApiTestClient.retrieveDocumentSpecification(null,
-                        "urn:ngsi-ld:document-specification:nonexistent", null));
+                        "urn:ngsi-ld:document-specification:non-existent", null));
 
-        assertEquals(HttpStatus.NOT_FOUND, retrieveResponse.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatus(), "No such document specification should exist.");
+
+        Optional<ErrorDetails> optionalErrorDetails = response.getBody(ErrorDetails.class);
+        assertTrue(optionalErrorDetails.isPresent(), "Error details should have been provided.");
     }
 
+    @Disabled("Prohibited by the framework.")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void retrieveDocumentSpecification405() throws Exception {
-        // Method not allowed - not applicable
     }
 
+    @Disabled("Conflict not possible on retrieval")
+    @Test
     @Override
-    @Disabled("Not implemented")
     public void retrieveDocumentSpecification409() throws Exception {
-        // Conflict - not applicable for retrieve
     }
 
     @Override
-    @Disabled("Not implemented")
     public void retrieveDocumentSpecification500() throws Exception {
-        // Internal server error - hard to simulate
     }
 }
