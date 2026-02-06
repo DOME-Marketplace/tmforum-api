@@ -283,6 +283,12 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/DocumentSpecification"
+            }
+          },
           "400": {
             "description": "Bad Request - PATCH method is not supported for document specifications",
             "schema": {
