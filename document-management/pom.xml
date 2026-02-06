@@ -13,7 +13,7 @@
     </parent>
 
     <properties>
-        <tmforum.api.url>${project.parent.basedir}/document_manager.json</tmforum.api.url>
+        <tmforum.api.url>${project.parent.basedir}/api/tm-forum/${project.artifactId}/api.json</tmforum.api.url>
     </properties>
 
     <dependencies>
