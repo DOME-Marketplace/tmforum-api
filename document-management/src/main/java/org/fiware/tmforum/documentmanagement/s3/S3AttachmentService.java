@@ -40,10 +40,13 @@ public class S3AttachmentService {
         log.info("  maxContentSize: {}", config.getMaxContentSize());
 
         try {
-            this.minioClient = MinioClient.builder()
+            MinioClient.Builder builder = MinioClient.builder()
                     .endpoint(config.getEndpoint())
-                    .credentials(config.getAccessKey(), config.getSecretKey())
-                    .build();
+                    .credentials(config.getAccessKey(), config.getSecretKey());
+            if (config.getRegion() != null && !config.getRegion().isBlank()) {
+                builder.region(config.getRegion());
+            }
+            this.minioClient = builder.build();
             log.info("MinioClient created successfully");
         } catch (Exception e) {
             log.error("Failed to create MinioClient: {}", e.getMessage(), e);
