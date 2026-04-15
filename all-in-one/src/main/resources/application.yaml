@@ -39,6 +39,10 @@ general:
   serverHost: http://localhost:8632
 
 ---
+apiExtension:
+  enabled: ${API_EXTENSION_ENABLED:false}
+
+---
 api:
   account:
     basepath: /tmf-api/accountManagement/v4

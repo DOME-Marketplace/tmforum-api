@@ -39,7 +39,7 @@ general:
   serverHost: http://localhost:8632
 
 apiExtension:
-  enabled: ${API_EXTENSION_ENABLED}
+  enabled: ${API_EXTENSION_ENABLED:false}
 api:
   resource-function-activation:
     basepath: ${general.basepath:/}
