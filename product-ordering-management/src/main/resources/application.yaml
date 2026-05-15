@@ -40,6 +40,7 @@ general:
 
 apiExtension:
   enabled: ${API_EXTENSION_ENABLED:false}
+  deleteEnabled: ${API_EXTENSION_DELETE_ENABLED:true}
 api:
   product-ordering-management:
     basepath: ${general.basepath:/}

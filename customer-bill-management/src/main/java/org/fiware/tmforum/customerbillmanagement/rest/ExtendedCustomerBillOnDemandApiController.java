@@ -1,7 +1,9 @@
 package org.fiware.tmforum.customerbillmanagement.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.customerbillmanagement.api.ext.CustomerBillOnDemandExtensionApi;
@@ -19,6 +21,9 @@ import reactor.core.publisher.Mono;
 public class ExtendedCustomerBillOnDemandApiController extends AbstractApiController<CustomerBillOnDemand>
         implements CustomerBillOnDemandExtensionApi {
 
+    @Value("${apiExtension.deleteEnabled:true}")
+    private boolean deleteEnabled;
+
     public ExtendedCustomerBillOnDemandApiController(
             QueryParser queryParser,
             ReferenceValidationService validationService,
@@ -29,6 +34,9 @@ public class ExtendedCustomerBillOnDemandApiController extends AbstractApiContro
 
     @Override
     public Mono<HttpResponse<Object>> deleteCustomerBillOnDemand(String id) {
+        if (!deleteEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         return delete(id);
     }
 }

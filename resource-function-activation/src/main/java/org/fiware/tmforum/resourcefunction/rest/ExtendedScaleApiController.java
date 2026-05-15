@@ -1,7 +1,9 @@
 package org.fiware.tmforum.resourcefunction.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.resourcefunction.api.ext.ScaleExtensionApi;
@@ -19,6 +21,9 @@ import reactor.core.publisher.Mono;
 public class ExtendedScaleApiController extends AbstractApiController<Scale>
         implements ScaleExtensionApi {
 
+    @Value("${apiExtension.deleteEnabled:true}")
+    private boolean deleteEnabled;
+
     public ExtendedScaleApiController(
             QueryParser queryParser,
             ReferenceValidationService validationService,
@@ -29,6 +34,9 @@ public class ExtendedScaleApiController extends AbstractApiController<Scale>
 
     @Override
     public Mono<HttpResponse<Object>> deleteScale(String id) {
+        if (!deleteEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         return delete(id);
     }
 }

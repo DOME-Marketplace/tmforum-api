@@ -1,7 +1,9 @@
 package org.fiware.tmforum.resourcefunction.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.resourcefunction.api.ext.HealExtensionApi;
@@ -19,6 +21,9 @@ import reactor.core.publisher.Mono;
 public class ExtendedHealApiController extends AbstractApiController<Heal>
         implements HealExtensionApi {
 
+    @Value("${apiExtension.deleteEnabled:true}")
+    private boolean deleteEnabled;
+
     public ExtendedHealApiController(
             QueryParser queryParser,
             ReferenceValidationService validationService,
@@ -29,6 +34,9 @@ public class ExtendedHealApiController extends AbstractApiController<Heal>
 
     @Override
     public Mono<HttpResponse<Object>> deleteHeal(String id) {
+        if (!deleteEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         return delete(id);
     }
 }
