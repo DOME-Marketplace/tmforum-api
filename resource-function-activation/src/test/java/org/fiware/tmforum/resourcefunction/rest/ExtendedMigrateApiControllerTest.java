@@ -8,9 +8,8 @@ import org.fiware.tmforum.common.repository.TmForumRepository;
 import org.fiware.tmforum.common.validation.ReferenceValidationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Field;
@@ -20,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
 class ExtendedMigrateApiControllerTest {
 
     private static final String VALID_ID = "urn:ngsi-ld:migrate:test-id";
@@ -34,6 +32,7 @@ class ExtendedMigrateApiControllerTest {
 
     @BeforeEach
     void setUp() {
+        MockitoAnnotations.initMocks(this);
         controller = new ExtendedMigrateApiController(queryParser, validationService, repository, eventHandler);
     }
 
