@@ -13,10 +13,9 @@ import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Field;
-import java.net.URI;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 class ExtendedCustomerBillOnDemandApiControllerTest {
@@ -54,7 +53,7 @@ class ExtendedCustomerBillOnDemandApiControllerTest {
     @Test
     void deleteCustomerBillOnDemand_whenDeleteEnabled_returns204() throws Exception {
         setDeleteEnabled(true);
-        when(repository.deleteDomainEntity(any(URI.class))).thenReturn(Mono.empty());
+        when(repository.deleteDomainEntity(any())).thenReturn(Mono.empty());
 
         HttpResponse<Object> response = controller.deleteCustomerBillOnDemand(VALID_ID).block();
 
