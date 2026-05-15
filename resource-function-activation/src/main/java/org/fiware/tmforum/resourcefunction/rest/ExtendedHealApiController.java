@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
 public class ExtendedHealApiController extends AbstractApiController<Heal>
         implements HealExtensionApi {
 
-    @Value("${apiExtension.deleteEnabled:true}")
+    @Value("${apiExtension.deleteEnabled:false}")
     private boolean deleteEnabled;
 
     public ExtendedHealApiController(

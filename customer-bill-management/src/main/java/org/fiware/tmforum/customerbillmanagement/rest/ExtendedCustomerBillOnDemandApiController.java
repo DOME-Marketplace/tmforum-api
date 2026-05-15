@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
 public class ExtendedCustomerBillOnDemandApiController extends AbstractApiController<CustomerBillOnDemand>
         implements CustomerBillOnDemandExtensionApi {
 
-    @Value("${apiExtension.deleteEnabled:true}")
+    @Value("${apiExtension.deleteEnabled:false}")
     private boolean deleteEnabled;
 
     public ExtendedCustomerBillOnDemandApiController(

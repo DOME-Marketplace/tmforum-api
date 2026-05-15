@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
 public class ExtendedCancelProductOrderApiController extends AbstractApiController<CancelProductOrder>
         implements CancelProductOrderExtensionApi {
 
-    @Value("${apiExtension.deleteEnabled:true}")
+    @Value("${apiExtension.deleteEnabled:false}")
     private boolean deleteEnabled;
 
     public ExtendedCancelProductOrderApiController(

@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
 public class ExtendedMonitorApiController extends AbstractApiController<Monitor>
         implements MonitorExtensionApi {
 
-    @Value("${apiExtension.deleteEnabled:true}")
+    @Value("${apiExtension.deleteEnabled:false}")
     private boolean deleteEnabled;
 
     public ExtendedMonitorApiController(

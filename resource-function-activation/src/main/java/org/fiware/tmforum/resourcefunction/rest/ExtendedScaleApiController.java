@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
 public class ExtendedScaleApiController extends AbstractApiController<Scale>
         implements ScaleExtensionApi {
 
-    @Value("${apiExtension.deleteEnabled:true}")
+    @Value("${apiExtension.deleteEnabled:false}")
     private boolean deleteEnabled;
 
     public ExtendedScaleApiController(

@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
 public class ExtendedMigrateApiController extends AbstractApiController<Migrate>
         implements MigrateExtensionApi {
 
-    @Value("${apiExtension.deleteEnabled:true}")
+    @Value("${apiExtension.deleteEnabled:false}")
     private boolean deleteEnabled;
 
     public ExtendedMigrateApiController(
