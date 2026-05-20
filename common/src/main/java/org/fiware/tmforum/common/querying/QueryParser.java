@@ -35,7 +35,31 @@ import static org.fiware.tmforum.common.querying.Operator.REGEX;
 @RequiredArgsConstructor
 public class QueryParser {
 
-    private static final List<String> RESERVED_WORDS = List.of("id", "@id", "value", "@value", "type", "@type", "context", "@context");
+    /**
+     * JSON-LD reserved keywords carried in TMF payloads are persisted on
+     * {@link org.fiware.tmforum.common.domain.Entity} under sanitised
+     * NGSI-LD attribute names because NGSI-LD reserves the {@code @}-prefixed
+     * forms structurally. To let clients filter by the natural TMF JSON name
+     * (e.g. {@code ?@type=BlueprintProductSpecification}), we rewrite the
+     * query path segments to the persisted internal names before resolving
+     * the attribute against the target class.
+     *
+     * The {@code @id} entry maps to the unprefixed {@code id}, which is then
+     * picked up by the single-segment {@code id} shortcut further down and
+     * routed to NGSI-LD's native {@code id=} URL parameter — same end result
+     * as a direct {@code ?id=...} query.
+     */
+    private static final Map<String, String> JSON_LD_RESERVED_TO_ENTITY_FIELD = Map.of(
+            "@id", "id",
+            "@type", "atType",
+            "@baseType", "atBaseType",
+            "@schemaLocation", "atSchemaLocation");
+
+    private static List<String> translateJsonLdReservedTokens(List<String> pathParts) {
+        return pathParts.stream()
+                .map(p -> JSON_LD_RESERVED_TO_ENTITY_FIELD.getOrDefault(p, p))
+                .toList();
+    }
 
     protected final GeneralProperties generalProperties;
 
@@ -168,7 +192,7 @@ public class QueryParser {
         List<ResolvedCondition> resolvedConditions = new ArrayList<>();
         queryPartsStream.forEach(qp -> {
             NgsiLdAttribute attribute = JavaObjectMapper.getNGSIAttributePath(
-                    Arrays.asList(qp.attribute().split("\\.")),
+                    translateJsonLdReservedTokens(Arrays.asList(qp.attribute().split("\\."))),
                     queryClass);
             boolean isKnown = !attribute.path().isEmpty();
             if (!isKnown) {
