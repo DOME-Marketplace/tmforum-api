@@ -1,7 +1,9 @@
 package org.fiware.tmforum.resourcefunction.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.resourcefunction.api.ext.MigrateExtensionApi;
@@ -19,6 +21,9 @@ import reactor.core.publisher.Mono;
 public class ExtendedMigrateApiController extends AbstractApiController<Migrate>
         implements MigrateExtensionApi {
 
+    @Value("${apiExtension.deleteEnabled:false}")
+    private boolean deleteEnabled;
+
     public ExtendedMigrateApiController(
             QueryParser queryParser,
             ReferenceValidationService validationService,
@@ -29,6 +34,9 @@ public class ExtendedMigrateApiController extends AbstractApiController<Migrate>
 
     @Override
     public Mono<HttpResponse<Object>> deleteMigrate(String id) {
+        if (!deleteEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         return delete(id);
     }
 }
