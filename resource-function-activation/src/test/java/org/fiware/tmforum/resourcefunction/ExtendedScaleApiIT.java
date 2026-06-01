@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 
 @MicronautTest(packages = {"org.fiware.tmforum.resourcefunction"})
 @Property(name = "apiExtension.enabled", value = "true")
+@Property(name = "apiExtension.deleteEnabled", value = "true")
 public class ExtendedScaleApiIT extends AbstractApiIT implements ScaleExtensionApiTestSpec {
 
     private final ScaleExtensionApiTestClient extensionTestClient;
