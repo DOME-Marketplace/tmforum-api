@@ -428,7 +428,30 @@ public class ExtendedAppliedCustomerBillingRateApiIT extends AbstractApiIT imple
 								.product(null)
 								.billingAccount(null)
 								.name("new-name")
-								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID)))
+								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID))),
+				Arguments.of(
+						"When periodCoverage is updated, it should be corrected.",
+						AppliedCustomerBillingRateCreateVOTestExample.build().atSchemaLocation(null)
+								.isBilled(true)
+								.billingAccount(null)
+								.product(null)
+								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID)),
+						AppliedCustomerBillingRateUpdateVOTestExample.build().atSchemaLocation(null)
+								.isBilled(true)
+								.billingAccount(null)
+								.product(null)
+								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID))
+								.periodCoverage(new TimePeriodVO()
+										.startDateTime(Instant.parse("2025-01-01T00:00:00Z"))
+										.endDateTime(Instant.parse("2025-02-01T00:00:00Z"))),
+						AppliedCustomerBillingRateVOTestExample.build().atSchemaLocation(null)
+								.isBilled(true)
+								.billingAccount(null)
+								.product(null)
+								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID))
+								.periodCoverage(new TimePeriodVO()
+										.startDateTime(Instant.parse("2025-01-01T00:00:00Z"))
+										.endDateTime(Instant.parse("2025-02-01T00:00:00Z"))))
 		);
 	}
 
