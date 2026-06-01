@@ -365,6 +365,7 @@ public class ExtendedAppliedCustomerBillingRateApiIT extends AbstractApiIT imple
 		expectedAppliedCustomerBillingRateVo
 				.href(id)
 				.id(id)
+				.periodCoverage(appliedCustomerBillingRateUpdateVO.getPeriodCoverage())
 				.date(currentTimeInstant);
 
 		assertEquals(expectedAppliedCustomerBillingRateVo, updated, message);
