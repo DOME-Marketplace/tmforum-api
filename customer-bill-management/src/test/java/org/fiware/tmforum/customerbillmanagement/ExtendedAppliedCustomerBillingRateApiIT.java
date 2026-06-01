@@ -384,6 +384,7 @@ public class ExtendedAppliedCustomerBillingRateApiIT extends AbstractApiIT imple
 								.isBilled(true)
 								.billingAccount(null)
 								.product(null)
+								.periodCoverage(null)
 								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID)),
 						AppliedCustomerBillingRateVOTestExample.build().atSchemaLocation(null)
 								.isBilled(true)
@@ -401,6 +402,7 @@ public class ExtendedAppliedCustomerBillingRateApiIT extends AbstractApiIT imple
 						AppliedCustomerBillingRateUpdateVOTestExample.build().atSchemaLocation(null)
 								.isBilled(false)
 								.product(null)
+								.periodCoverage(null)
 								.billingAccount(BillingAccountRefVOTestExample.build().atSchemaLocation(null).id(BILLING_ACCOUNT_ID).href(BILLING_ACCOUNT_ID))
 								.bill(null),
 						AppliedCustomerBillingRateVOTestExample.build().atSchemaLocation(null)
@@ -421,6 +423,7 @@ public class ExtendedAppliedCustomerBillingRateApiIT extends AbstractApiIT imple
 								.isBilled(true)
 								.product(null)
 								.billingAccount(null)
+								.periodCoverage(null)
 								.name("new-name")
 								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID)),
 						AppliedCustomerBillingRateVOTestExample.build().atSchemaLocation(null)
