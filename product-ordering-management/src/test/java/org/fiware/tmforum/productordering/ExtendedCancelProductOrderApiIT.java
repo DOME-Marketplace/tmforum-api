@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 
 @MicronautTest(packages = {"org.fiware.tmforum.productordering"})
 @Property(name = "apiExtension.enabled", value = "true")
+@Property(name = "apiExtension.deleteEnabled", value = "true")
 public class ExtendedCancelProductOrderApiIT extends AbstractApiIT
         implements CancelProductOrderExtensionApiTestSpec {
 
