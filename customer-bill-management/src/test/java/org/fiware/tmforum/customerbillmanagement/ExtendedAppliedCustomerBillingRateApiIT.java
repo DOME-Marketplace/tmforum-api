@@ -365,7 +365,7 @@ public class ExtendedAppliedCustomerBillingRateApiIT extends AbstractApiIT imple
 		expectedAppliedCustomerBillingRateVo
 				.href(id)
 				.id(id)
-				.periodCoverage(null)
+				.periodCoverage(appliedCustomerBillingRateUpdateVO.getPeriodCoverage())
 				.date(currentTimeInstant);
 
 		assertEquals(expectedAppliedCustomerBillingRateVo, updated, message);
@@ -384,6 +384,7 @@ public class ExtendedAppliedCustomerBillingRateApiIT extends AbstractApiIT imple
 								.isBilled(true)
 								.billingAccount(null)
 								.product(null)
+								.periodCoverage(null)
 								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID)),
 						AppliedCustomerBillingRateVOTestExample.build().atSchemaLocation(null)
 								.isBilled(true)
@@ -401,6 +402,7 @@ public class ExtendedAppliedCustomerBillingRateApiIT extends AbstractApiIT imple
 						AppliedCustomerBillingRateUpdateVOTestExample.build().atSchemaLocation(null)
 								.isBilled(false)
 								.product(null)
+								.periodCoverage(null)
 								.billingAccount(BillingAccountRefVOTestExample.build().atSchemaLocation(null).id(BILLING_ACCOUNT_ID).href(BILLING_ACCOUNT_ID))
 								.bill(null),
 						AppliedCustomerBillingRateVOTestExample.build().atSchemaLocation(null)
@@ -421,6 +423,7 @@ public class ExtendedAppliedCustomerBillingRateApiIT extends AbstractApiIT imple
 								.isBilled(true)
 								.product(null)
 								.billingAccount(null)
+								.periodCoverage(null)
 								.name("new-name")
 								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID)),
 						AppliedCustomerBillingRateVOTestExample.build().atSchemaLocation(null)
@@ -428,7 +431,30 @@ public class ExtendedAppliedCustomerBillingRateApiIT extends AbstractApiIT imple
 								.product(null)
 								.billingAccount(null)
 								.name("new-name")
-								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID)))
+								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID))),
+				Arguments.of(
+						"When periodCoverage is updated, it should be corrected.",
+						AppliedCustomerBillingRateCreateVOTestExample.build().atSchemaLocation(null)
+								.isBilled(true)
+								.billingAccount(null)
+								.product(null)
+								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID)),
+						AppliedCustomerBillingRateUpdateVOTestExample.build().atSchemaLocation(null)
+								.isBilled(true)
+								.billingAccount(null)
+								.product(null)
+								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID))
+								.periodCoverage(new TimePeriodVO()
+										.startDateTime(Instant.parse("2025-01-01T00:00:00Z"))
+										.endDateTime(Instant.parse("2025-02-01T00:00:00Z"))),
+						AppliedCustomerBillingRateVOTestExample.build().atSchemaLocation(null)
+								.isBilled(true)
+								.billingAccount(null)
+								.product(null)
+								.bill(BillRefVOTestExample.build().atSchemaLocation(null).id(BILL_ID).href(BILL_ID))
+								.periodCoverage(new TimePeriodVO()
+										.startDateTime(Instant.parse("2025-01-01T00:00:00Z"))
+										.endDateTime(Instant.parse("2025-02-01T00:00:00Z"))))
 		);
 	}
 
