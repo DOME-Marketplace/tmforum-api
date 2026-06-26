@@ -50,7 +50,7 @@ public class SettlementAccountApiController extends AbstractApiController<Settle
                 .map(HttpResponse::created);
     }
 
-    private Mono<SettlementAccount> getCheckingMono(SettlementAccount settlementAccount) {
+    protected Mono<SettlementAccount> getCheckingMono(SettlementAccount settlementAccount) {
         List<List<? extends ReferencedEntity>> references = new ArrayList<>();
         references.add(settlementAccount.getRelatedParty());
         Optional.ofNullable(settlementAccount.getDefaultPaymentMethod()).map(List::of).ifPresent(references::add);
