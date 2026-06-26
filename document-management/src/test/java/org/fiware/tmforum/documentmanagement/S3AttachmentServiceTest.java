@@ -24,6 +24,7 @@ class S3AttachmentServiceTest {
         config.setAccessKey("minioadmin");
         config.setSecretKey("minioadmin");
         config.setBucket("test-bucket");
+        config.setKeyPrefix("test-env");
         config.setMaxContentSize(1024 * 1024); // 1MB for tests
     }
 
