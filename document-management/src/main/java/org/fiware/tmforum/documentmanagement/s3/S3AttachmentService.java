@@ -33,10 +33,14 @@ public class S3AttachmentService {
 
     @PostConstruct
     public void init() {
+        if (config.getKeyPrefix() == null || config.getKeyPrefix().isBlank()) {
+            throw new IllegalStateException("s3.keyPrefix is required and must not be blank");
+        }
         log.info("Initializing S3AttachmentService:");
         log.info("  endpoint: {}", config.getEndpoint());
         log.info("  accessKey: {}", config.getAccessKey());
         log.info("  bucket: {}", config.getBucket());
+        log.info("  keyPrefix: {}", config.getKeyPrefix());
         log.info("  maxContentSize: {}", config.getMaxContentSize());
 
         try {
@@ -182,7 +186,7 @@ public class S3AttachmentService {
         }
         // Clean the name for S3 key
         name = name.replaceAll("[^a-zA-Z0-9._-]", "_");
-        return String.format("%s/%s-%s", entityId, UUID.randomUUID().toString(), name);
+        return String.format("%s/%s/%s-%s", config.getKeyPrefix(), entityId, UUID.randomUUID().toString(), name);
     }
 
     private void uploadToS3(String key, byte[] content, String mimeType) {

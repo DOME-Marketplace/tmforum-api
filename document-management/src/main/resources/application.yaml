@@ -47,4 +47,5 @@ s3:
   accessKey: "minioadmin"
   secretKey: "minioadmin"
   bucket: "document-attachments"
+  keyPrefix: "dev"
   maxContentSize: 10485760

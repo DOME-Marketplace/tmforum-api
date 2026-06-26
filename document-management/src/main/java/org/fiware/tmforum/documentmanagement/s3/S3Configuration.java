@@ -15,4 +15,5 @@ public class S3Configuration {
     private String bucket = "document-attachments";
     private String region;
     private long maxContentSize = 10 * 1024 * 1024; // 10MB default
+    private String keyPrefix;
 }
