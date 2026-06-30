@@ -51,7 +51,7 @@ public class CustomerApiController extends AbstractApiController<Customer> imple
 				.map(HttpResponse::created);
 	}
 
-	private Mono<Customer> getCheckingMono(Customer customer) {
+	protected Mono<Customer> getCheckingMono(Customer customer) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		references.add(customer.getAccount());
 		references.add(customer.getAgreement());
