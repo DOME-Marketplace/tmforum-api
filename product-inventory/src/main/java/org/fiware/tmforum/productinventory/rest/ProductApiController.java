@@ -48,7 +48,7 @@ public class ProductApiController extends AbstractApiController<Product> impleme
 				.map(HttpResponse::created);
 	}
 
-	private Mono<Product> getCheckingMono(Product product) {
+	protected Mono<Product> getCheckingMono(Product product) {
 
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		references.add(product.getAgreement());

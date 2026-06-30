@@ -40,3 +40,5 @@ general:
 api:
   product-inventory:
     basepath: ${general.basepath:/}
+apiExtension:
+  enabled: ${API_EXTENSION_ENABLED:true}
