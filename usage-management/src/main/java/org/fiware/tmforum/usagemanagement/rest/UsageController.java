@@ -48,7 +48,7 @@ public class UsageController extends AbstractApiController<Usage> implements Usa
                                 .map(HttpResponse::created);
         }
 
-        private Mono<Usage> getCheckingMono(Usage ug) {
+        protected Mono<Usage> getCheckingMono(Usage ug) {
                 List<List<? extends ReferencedEntity>> references = new ArrayList<>();
                 references.add(ug.getRelatedParty());
                 Optional.ofNullable(ug.getUsageSpecification()).map(List::of).ifPresent(references::add);

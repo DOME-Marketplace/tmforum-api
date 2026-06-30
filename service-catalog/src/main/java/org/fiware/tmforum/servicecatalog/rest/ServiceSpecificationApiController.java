@@ -72,7 +72,7 @@ public class ServiceSpecificationApiController extends AbstractApiController<Ser
 				.map(HttpResponse::created);
 	}
 
-	private Mono<ServiceSpecification> validateSpec(ServiceSpecification serviceSpecification) {
+	protected Mono<ServiceSpecification> validateSpec(ServiceSpecification serviceSpecification) {
 		Mono<ServiceSpecification> checkingMono = getCheckingMono(serviceSpecification);
 
 		// no external calls -> no mono

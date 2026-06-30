@@ -56,7 +56,7 @@ public class ServiceCategoryApiController extends AbstractApiController<ServiceC
 				.map(HttpResponse::created);
 	}
 
-	private Mono<ServiceCategory> getCheckingMono(ServiceCategory serviceCategory) {
+	protected Mono<ServiceCategory> getCheckingMono(ServiceCategory serviceCategory) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		references.add(serviceCategory.getCategory());
 		references.add(serviceCategory.getServiceCandidate());

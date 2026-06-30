@@ -204,6 +204,20 @@
                     <apiPackage>org.fiware.serviceinventory.api</apiPackage>
                     <modelPackage>org.fiware.serviceinventory.model</modelPackage>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>openapi-service-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/${artifactId}/api/service-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.serviceinventory.api.ext</apiPackage>
+                            <modelPackage>org.fiware.serviceinventory.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <!-- add generated sources -->
             <plugin>

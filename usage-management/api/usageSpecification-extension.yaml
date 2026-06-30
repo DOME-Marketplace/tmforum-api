@@ -1,0 +1,43 @@
+openapi: 3.0.3
+info:
+  title: API UsageSpecification extension
+  version: 4.0.0
+tags:
+  - name: usageSpecificationExtension
+paths:
+  /usageSpecification/{id}:
+    put:
+      operationId: createUsageSpecificationWithId
+      tags: [usageSpecificationExtension]
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json;charset=utf-8:
+            schema: { $ref: '#/components/schemas/UsageSpecification_Create' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json;charset=utf-8:
+              schema: { $ref: '#/components/schemas/UsageSpecification' }
+        '400': { description: Bad Request }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden }
+        '405': { description: Method Not Allowed }
+        '409': { description: Conflict }
+        '500': { description: Internal Server Error }
+components:
+  schemas:
+    UsageSpecification:
+      type: object
+      properties:
+        id: { type: string }
+    UsageSpecification_Create:
+      type: object
+      properties:
+        name: { type: string }

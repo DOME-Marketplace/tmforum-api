@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: API ServiceSpecification extension
+  description: |-
+    ## TMF API Reference: TMF 633 - Service Catalog Management
+
+    Extension adding PUT (create with custom ID) support for ServiceSpecification.
+  version: 4.0.0
+tags:
+  - name: serviceSpecificationExtension
+paths:
+  /serviceSpecification/{id}:
+    put:
+      operationId: createServiceSpecificationWithId
+      summary: Creates a ServiceSpecification with a caller-supplied NGSI-LD ID
+      tags:
+        - serviceSpecificationExtension
+      parameters:
+        - name: id
+          description: NGSI-LD URN for the ServiceSpecification to create
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json;charset=utf-8:
+            schema:
+              $ref: '#/components/schemas/ServiceSpecification_Create'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json;charset=utf-8:
+              schema:
+                $ref: '#/components/schemas/ServiceSpecification'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '405':
+          description: Method Not Allowed
+        '409':
+          description: Conflict
+        '500':
+          description: Internal Server Error
+components:
+  schemas:
+    ServiceSpecification:
+      type: object
+      properties:
+        id:
+          type: string
+    ServiceSpecification_Create:
+      type: object
+      properties:
+        name:
+          type: string
