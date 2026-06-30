@@ -51,7 +51,7 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 				.map(HttpResponse::created);
 	}
 
-	private Mono<Resource> getCheckingMono(Resource resource) {
+	protected Mono<Resource> getCheckingMono(Resource resource) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		references.add(resource.getRelatedParty());
 		Optional.ofNullable(resource.getPlace()).ifPresent(place -> references.add(List.of(place)));
@@ -95,7 +95,7 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 								TmForumExceptionReason.INVALID_RELATIONSHIP));
 	}
 
-	private void validateInternalRefs(Resource resource) {
+	protected void validateInternalRefs(Resource resource) {
 		if (resource.getNote() != null) {
 			List<URI> noteIds = resource.getNote().stream().map(Note::getTmfId).toList();
 			if (noteIds.size() != new HashSet<>(noteIds).size()) {

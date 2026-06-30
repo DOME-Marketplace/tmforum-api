@@ -199,6 +199,24 @@
                     <apiPackage>org.fiware.resourceinventory.api</apiPackage>
                     <modelPackage>org.fiware.resourceinventory.model</modelPackage>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>openapi-resource-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/resource-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.resourceinventory.api.ext</apiPackage>
+                            <modelPackage>org.fiware.resourceinventory.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <!-- add generated sources -->
             <plugin>
