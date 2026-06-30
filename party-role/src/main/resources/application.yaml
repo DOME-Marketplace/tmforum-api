@@ -40,3 +40,6 @@ general:
 api:
   party-role:
     basepath: ${general.basepath:/}
+---
+apiExtension:
+  enabled: ${API_EXTENSION_ENABLED:true}

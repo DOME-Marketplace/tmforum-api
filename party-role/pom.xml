@@ -223,6 +223,24 @@
                     <apiPackage>org.fiware.partyRole.api</apiPackage>
                     <modelPackage>org.fiware.partyRole.model</modelPackage>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>openapi-party-role-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/party-role-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.partyRole.api.ext</apiPackage>
+                            <modelPackage>org.fiware.partyRole.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <!-- add generated sources -->
             <plugin>
