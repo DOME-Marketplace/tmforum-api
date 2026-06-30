@@ -469,6 +469,7 @@
                             <inputSpec>${project.parent.basedir}/resource-function-activation/api/scale-extension.yaml</inputSpec>
                             <apiPackage>org.fiware.resourcefunction.api.ext</apiPackage>
                             <modelPackage>org.fiware.resourcefunction.model</modelPackage>
+                            <generateModels>false</generateModels>
                         </configuration>
                     </execution>
                     <execution>
@@ -480,6 +481,7 @@
                             <inputSpec>${project.parent.basedir}/resource-function-activation/api/heal-extension.yaml</inputSpec>
                             <apiPackage>org.fiware.resourcefunction.api.ext</apiPackage>
                             <modelPackage>org.fiware.resourcefunction.model</modelPackage>
+                            <generateModels>false</generateModels>
                         </configuration>
                     </execution>
                     <execution>
@@ -491,6 +493,7 @@
                             <inputSpec>${project.parent.basedir}/resource-function-activation/api/migrate-extension.yaml</inputSpec>
                             <apiPackage>org.fiware.resourcefunction.api.ext</apiPackage>
                             <modelPackage>org.fiware.resourcefunction.model</modelPackage>
+                            <generateModels>false</generateModels>
                         </configuration>
                     </execution>
                     <execution>
@@ -502,6 +505,7 @@
                             <inputSpec>${project.parent.basedir}/resource-function-activation/api/monitor-extension.yaml</inputSpec>
                             <apiPackage>org.fiware.resourcefunction.api.ext</apiPackage>
                             <modelPackage>org.fiware.resourcefunction.model</modelPackage>
+                            <generateModels>false</generateModels>
                         </configuration>
                     </execution>
                     <!-- account extension APIs -->
@@ -701,6 +705,107 @@
                             <inputSpec>${project.parent.basedir}/resource-catalog/api/resource-category-extension.yaml</inputSpec>
                             <apiPackage>org.fiware.resourcecatalog.api.ext</apiPackage>
                             <modelPackage>org.fiware.resourcecatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <!-- resource-function-activation function extension -->
+                    <execution>
+                        <id>resource-function-activation-ext-function</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/resource-function-activation/api/function-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.resourcefunction.api.ext</apiPackage>
+                            <modelPackage>org.fiware.resourcefunction.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <!-- resource-inventory extension APIs -->
+                    <execution>
+                        <id>resource-inventory-ext-resource</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/resource-inventory/api/resource-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.resourceinventory.api.ext</apiPackage>
+                            <modelPackage>org.fiware.resourceinventory.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <!-- service-catalog extension APIs -->
+                    <execution>
+                        <id>service-catalog-ext-service-candidate</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/service-catalog/api/serviceCandidate-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.servicecatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.servicecatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>service-catalog-ext-service-category</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/service-catalog/api/serviceCategory-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.servicecatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.servicecatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>service-catalog-ext-service-specification</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/service-catalog/api/serviceSpecification-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.servicecatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.servicecatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <!-- service-inventory extension APIs -->
+                    <execution>
+                        <id>service-inventory-ext-service</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/service-inventory/api/service-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.serviceinventory.api.ext</apiPackage>
+                            <modelPackage>org.fiware.serviceinventory.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <!-- usage-management extension APIs -->
+                    <execution>
+                        <id>usage-management-ext-usage</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/usage-management/api/usage-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.usagemanagement.api.ext</apiPackage>
+                            <modelPackage>org.fiware.usagemanagement.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>usage-management-ext-usage-specification</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/usage-management/api/usageSpecification-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.usagemanagement.api.ext</apiPackage>
+                            <modelPackage>org.fiware.usagemanagement.model</modelPackage>
                             <generateModels>false</generateModels>
                         </configuration>
                     </execution>
