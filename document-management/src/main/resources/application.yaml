@@ -41,6 +41,9 @@ general:
 mapping:
   strictRelationships: false
   api_extension_enabled: true
+---
+apiExtension:
+  enabled: ${API_EXTENSION_ENABLED:false}
 
 s3:
   endpoint: "http://localhost:9000"
