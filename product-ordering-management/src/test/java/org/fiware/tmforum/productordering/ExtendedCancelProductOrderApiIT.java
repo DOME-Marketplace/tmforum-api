@@ -11,6 +11,7 @@ import org.fiware.productordering.api.CancelProductOrderApiTestClient;
 import org.fiware.productordering.api.ProductOrderApiTestClient;
 import org.fiware.productordering.api.ext.CancelProductOrderExtensionApiTestClient;
 import org.fiware.productordering.api.ext.CancelProductOrderExtensionApiTestSpec;
+import org.fiware.tmforum.common.mapping.IdHelper;
 import org.fiware.productordering.model.*;
 import org.fiware.tmforum.common.configuration.GeneralProperties;
 import org.fiware.tmforum.common.exception.ErrorDetails;
@@ -25,6 +26,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Clock;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -85,6 +87,69 @@ public class ExtendedCancelProductOrderApiIT extends AbstractApiIT
     @Override
     protected String getEntityType() {
         return CancelProductOrder.TYPE_CANCEL_PRODUCT_ORDER;
+    }
+
+    private CancelProductOrderCreateVO buildCreateVO() {
+        return CancelProductOrderCreateVOTestExample.build()
+                .atSchemaLocation(null)
+                .productOrder(ProductOrderRefVOTestExample.build().atSchemaLocation(null).id(productOrderId));
+    }
+
+    @Test
+    @Override
+    public void createCancelProductOrderWithId201() throws Exception {
+        String id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), CancelProductOrder.TYPE_CANCEL_PRODUCT_ORDER).toString();
+
+        HttpResponse<CancelProductOrderVO> response = callAndCatch(
+                () -> extensionTestClient.createCancelProductOrderWithId(null, id, buildCreateVO()));
+        assertEquals(HttpStatus.CREATED, response.getStatus(), "CancelProductOrder should have been created with the provided id.");
+        assertEquals(id, response.body().getId(), "The returned id should match the provided id.");
+    }
+
+    @Test
+    @Override
+    public void createCancelProductOrderWithId400() throws Exception {
+        HttpResponse<CancelProductOrderVO> response = callAndCatch(
+                () -> extensionTestClient.createCancelProductOrderWithId(null, "invalid-id", buildCreateVO()));
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatus(), "A non NGSI-LD id should be rejected.");
+        Optional<ErrorDetails> optionalErrorDetails = response.getBody(ErrorDetails.class);
+        assertTrue(optionalErrorDetails.isPresent(), "Error details should be provided.");
+    }
+
+    @Disabled("Security is handled externally.")
+    @Test
+    @Override
+    public void createCancelProductOrderWithId401() throws Exception {
+    }
+
+    @Disabled("Security is handled externally.")
+    @Test
+    @Override
+    public void createCancelProductOrderWithId403() throws Exception {
+    }
+
+    @Disabled("Prohibited by the framework.")
+    @Test
+    @Override
+    public void createCancelProductOrderWithId405() throws Exception {
+    }
+
+    @Test
+    @Override
+    public void createCancelProductOrderWithId409() throws Exception {
+        String id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), CancelProductOrder.TYPE_CANCEL_PRODUCT_ORDER).toString();
+
+        HttpResponse<CancelProductOrderVO> firstResponse = callAndCatch(
+                () -> extensionTestClient.createCancelProductOrderWithId(null, id, buildCreateVO()));
+        assertEquals(HttpStatus.CREATED, firstResponse.getStatus(), "First creation should succeed.");
+
+        HttpResponse<CancelProductOrderVO> secondResponse = callAndCatch(
+                () -> extensionTestClient.createCancelProductOrderWithId(null, id, buildCreateVO()));
+        assertEquals(HttpStatus.CONFLICT, secondResponse.getStatus(), "Second creation with the same id should fail.");
+    }
+
+    @Override
+    public void createCancelProductOrderWithId500() throws Exception {
     }
 
     @Test

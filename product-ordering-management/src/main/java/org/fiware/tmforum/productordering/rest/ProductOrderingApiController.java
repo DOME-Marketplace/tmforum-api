@@ -104,7 +104,7 @@ public class ProductOrderingApiController extends AbstractApiController<ProductO
 				.map(HttpResponse::ok);
 	}
 
-	private Mono<ProductOrder> getCheckingMono(ProductOrder productOrder) {
+	protected Mono<ProductOrder> getCheckingMono(ProductOrder productOrder) {
 
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		references.add(productOrder.getAgreement());
