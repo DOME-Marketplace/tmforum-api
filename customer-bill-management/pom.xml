@@ -250,6 +250,7 @@
                             </inputSpec>
                             <apiPackage>org.fiware.customerbillmanagement.api.ext</apiPackage>
                             <modelPackage>org.fiware.customerbillmanagement.model</modelPackage>
+                            <generateModels>false</generateModels>
                         </configuration>
                     </execution>
                 </executions>

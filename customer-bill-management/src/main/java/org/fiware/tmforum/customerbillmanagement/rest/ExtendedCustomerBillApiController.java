@@ -8,6 +8,8 @@ import org.fiware.customerbillmanagement.api.ext.CustomerBillExtensionApi;
 import org.fiware.customerbillmanagement.model.CustomerBillCreateVO;
 import org.fiware.customerbillmanagement.model.CustomerBillVO;
 import org.fiware.tmforum.common.mapping.IdHelper;
+import org.fiware.tmforum.common.exception.TmForumException;
+import org.fiware.tmforum.common.exception.TmForumExceptionReason;
 import org.fiware.tmforum.common.notification.TMForumEventHandler;
 import org.fiware.tmforum.common.querying.QueryParser;
 import org.fiware.tmforum.common.repository.TmForumRepository;
@@ -17,6 +19,7 @@ import org.fiware.tmforum.customerbillmanagement.TMForumMapper;
 import org.fiware.tmforum.customerbillmanagement.domain.CustomerBill;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.time.Clock;
 import java.util.UUID;
 
@@ -35,6 +38,20 @@ public class ExtendedCustomerBillApiController extends AbstractApiController<Cus
 		this.tmForumMapper = tmForumMapper;
 		this.clock = clock;
 		this.customerBillApiController = customerBillApiController;
+	}
+
+	@Override
+	public Mono<HttpResponse<CustomerBillVO>> createCustomerBillWithId(String id, CustomerBillCreateVO createVO) {
+		if (!IdHelper.isNgsiLdId(id)) {
+			throw new TmForumException(
+					String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+					TmForumExceptionReason.INVALID_DATA);
+		}
+		CustomerBill customerBill = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));
+		customerBill.setLastUpdate(clock.instant());
+		return create(customerBillApiController.getCheckingMono(customerBill), CustomerBill.class)
+				.map(tmForumMapper::map)
+				.map(HttpResponse::created);
 	}
 
 	@Override
