@@ -199,6 +199,50 @@
                     <apiPackage>org.fiware.resourcecatalog.api</apiPackage>
                     <modelPackage>org.fiware.resourcecatalog.model</modelPackage>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>openapi-resource-candidate-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/resource-candidate-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.resourcecatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.resourcecatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-resource-specification-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/resource-specification-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.resourcecatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.resourcecatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-resource-category-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/resource-category-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.resourcecatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.resourcecatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <!-- add generated sources -->
             <plugin>

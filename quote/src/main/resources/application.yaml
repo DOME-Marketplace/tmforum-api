@@ -41,4 +41,4 @@ api:
   quote:
     basepath: ${general.basepath:/}
 apiExtension:
-  enabled: ${API_EXTENSION_ENABLED:true}
+  enabled: ${API_EXTENSION_ENABLED:false}
