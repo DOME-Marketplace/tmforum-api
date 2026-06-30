@@ -39,7 +39,7 @@ general:
   serverHost: http://localhost:8632
 
 apiExtension:
-  enabled: ${API_EXTENSION_ENABLED:false}
+  enabled: ${API_EXTENSION_ENABLED:true}
   deleteEnabled: ${API_EXTENSION_DELETE_ENABLED:false}
 api:
   resource-function-activation:

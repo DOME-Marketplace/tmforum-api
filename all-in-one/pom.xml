@@ -40,6 +40,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- document-management -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.5.7</version>
+        </dependency>
+
         <!-- lazy dev -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -179,6 +186,7 @@
                                 <source>${project.parent.basedir}/service-catalog/src/main/java</source>
                                 <source>${project.parent.basedir}/service-inventory/src/main/java</source>
                                 <source>${project.parent.basedir}/usage-management/src/main/java</source>
+                                <source>${project.parent.basedir}/document-management/src/main/java</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -556,6 +564,17 @@
                             <apiPackage>org.fiware.customermanagement.api.ext</apiPackage>
                             <modelPackage>org.fiware.customermanagement.model</modelPackage>
                             <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>document-management</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/api/tm-forum/document-management/api.json</inputSpec>
+                            <apiPackage>org.fiware.document.api</apiPackage>
+                            <modelPackage>org.fiware.document.model</modelPackage>
                         </configuration>
                     </execution>
                     <!-- document-management extension APIs -->

@@ -15,6 +15,7 @@ import org.fiware.resourcefunction.model.ScaleCreateVOTestExample;
 import org.fiware.resourcefunction.model.ScaleVO;
 import org.fiware.tmforum.common.configuration.GeneralProperties;
 import org.fiware.tmforum.common.exception.ErrorDetails;
+import org.fiware.tmforum.common.mapping.IdHelper;
 import org.fiware.tmforum.common.notification.TMForumEventHandler;
 import org.fiware.tmforum.common.test.AbstractApiIT;
 import org.fiware.tmforum.resourcefunction.domain.Scale;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -60,13 +62,72 @@ public class ExtendedScaleApiIT extends AbstractApiIT implements ScaleExtensionA
         return Scale.TYPE_SCALE;
     }
 
+    private static ScaleCreateVO buildCreateVO() {
+        return ScaleCreateVOTestExample.build().atSchemaLocation(null).resourceFunction(null);
+    }
+
+    @Test
+    @Override
+    public void createScaleWithId201() throws Exception {
+        String id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), Scale.TYPE_SCALE).toString();
+
+        HttpResponse<ScaleVO> response = callAndCatch(
+                () -> extensionTestClient.createScaleWithId(null, id, buildCreateVO()));
+        assertEquals(HttpStatus.CREATED, response.getStatus(), "Scale should have been created with the provided id.");
+        assertEquals(id, response.body().getId(), "The returned id should match the provided id.");
+    }
+
+    @Test
+    @Override
+    public void createScaleWithId400() throws Exception {
+        HttpResponse<ScaleVO> response = callAndCatch(
+                () -> extensionTestClient.createScaleWithId(null, "invalid-id", buildCreateVO()));
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatus(), "A non NGSI-LD id should be rejected.");
+        Optional<ErrorDetails> optionalErrorDetails = response.getBody(ErrorDetails.class);
+        assertTrue(optionalErrorDetails.isPresent(), "Error details should be provided.");
+    }
+
+    @Disabled("Security is handled externally.")
+    @Test
+    @Override
+    public void createScaleWithId401() throws Exception {
+    }
+
+    @Disabled("Security is handled externally.")
+    @Test
+    @Override
+    public void createScaleWithId403() throws Exception {
+    }
+
+    @Disabled("Prohibited by the framework.")
+    @Test
+    @Override
+    public void createScaleWithId405() throws Exception {
+    }
+
+    @Test
+    @Override
+    public void createScaleWithId409() throws Exception {
+        String id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), Scale.TYPE_SCALE).toString();
+
+        HttpResponse<ScaleVO> firstResponse = callAndCatch(
+                () -> extensionTestClient.createScaleWithId(null, id, buildCreateVO()));
+        assertEquals(HttpStatus.CREATED, firstResponse.getStatus(), "First creation should succeed.");
+
+        HttpResponse<ScaleVO> secondResponse = callAndCatch(
+                () -> extensionTestClient.createScaleWithId(null, id, buildCreateVO()));
+        assertEquals(HttpStatus.CONFLICT, secondResponse.getStatus(), "Second creation with the same id should fail.");
+    }
+
+    @Override
+    public void createScaleWithId500() throws Exception {
+    }
+
     @Test
     @Override
     public void deleteScale204() throws Exception {
-        ScaleCreateVO createVO = ScaleCreateVOTestExample.build().atSchemaLocation(null).resourceFunction(null);
-
         HttpResponse<ScaleVO> createResponse = callAndCatch(
-                () -> baseTestClient.createScale(null, createVO));
+                () -> baseTestClient.createScale(null, buildCreateVO()));
         assertEquals(HttpStatus.CREATED, createResponse.getStatus(), "Scale should have been created.");
         String id = createResponse.body().getId();
 

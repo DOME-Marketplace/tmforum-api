@@ -45,7 +45,7 @@ public class HealApiController extends AbstractApiController<Heal> implements He
 				.map(HttpResponse::created);
 	}
 
-	private Mono<Heal> getCheckingMono(Heal heal) {
+	protected Mono<Heal> getCheckingMono(Heal heal) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 
 		Optional.ofNullable(heal.getHealPolicy()).ifPresent(healPolicyRef -> references.add(List.of(healPolicyRef)));

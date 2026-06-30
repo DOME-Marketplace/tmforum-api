@@ -55,7 +55,7 @@ public class ResourceFunctionApiController extends AbstractApiController<Resourc
 
 	}
 
-	private Mono<ResourceFunction> getCheckingMono(ResourceFunction resourceFunction) {
+	protected Mono<ResourceFunction> getCheckingMono(ResourceFunction resourceFunction) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		references.add(resourceFunction.getConnectionPoint());
 		references.add(resourceFunction.getRelatedParty());
