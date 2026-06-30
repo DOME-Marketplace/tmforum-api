@@ -204,6 +204,56 @@
                     <apiPackage>org.fiware.servicecatalog.api</apiPackage>
                     <modelPackage>org.fiware.servicecatalog.model</modelPackage>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>openapi-serviceSpecification-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/serviceSpecification-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.servicecatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.servicecatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-serviceCategory-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/serviceCategory-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.servicecatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.servicecatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-serviceCandidate-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/serviceCandidate-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.servicecatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.servicecatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <!-- add generated sources -->
             <plugin>

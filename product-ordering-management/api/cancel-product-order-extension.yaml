@@ -10,6 +10,31 @@ tags:
   - name: cancelProductOrderExtension
 paths:
   /cancelProductOrder/{id}:
+    put:
+      operationId: createCancelProductOrderWithId
+      tags: [cancelProductOrderExtension]
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json;charset=utf-8:
+            schema: { $ref: '#/components/schemas/CancelProductOrder_Create' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json;charset=utf-8:
+              schema: { $ref: '#/components/schemas/CancelProductOrder' }
+        '400': { description: Bad Request }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden }
+        '405': { description: Method Not Allowed }
+        '409': { description: Conflict }
+        '500': { description: Internal Server Error }
     delete:
       operationId: deleteCancelProductOrder
       summary: Deletes a CancelProductOrder by ID
@@ -58,6 +83,14 @@ paths:
                 $ref: '#/components/schemas/Error'
 components:
   schemas:
+    CancelProductOrder:
+      type: object
+      properties:
+        id: { type: string }
+    CancelProductOrder_Create:
+      type: object
+      properties:
+        cancellationReason: { type: string }
     Error:
       description: Used when an API throws an Error, typically with a HTTP error response-code (3xx, 4xx, 5xx)
       type: object

@@ -1,0 +1,43 @@
+openapi: 3.0.3
+info:
+  title: API DocumentSpecification management extension
+  version: 4.0.0
+tags:
+  - name: documentSpecificationExtension
+paths:
+  /documentSpecification/{id}:
+    put:
+      operationId: createDocumentSpecificationWithId
+      tags: [documentSpecificationExtension]
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json;charset=utf-8:
+            schema: { $ref: '#/components/schemas/DocumentSpecification_Create' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json;charset=utf-8:
+              schema: { $ref: '#/components/schemas/DocumentSpecification' }
+        '400': { description: Bad Request }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden }
+        '405': { description: Method Not Allowed }
+        '409': { description: Conflict }
+        '500': { description: Internal Server Error }
+components:
+  schemas:
+    DocumentSpecification:
+      type: object
+      properties:
+        id: { type: string }
+    DocumentSpecification_Create:
+      type: object
+      properties:
+        name: { type: string }

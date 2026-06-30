@@ -83,7 +83,7 @@ public class PartyRoleController extends AbstractApiController<PartyRole> implem
 				.map(HttpResponse::ok);
 	}
 
-	private Mono<PartyRole> getCheckingMono(PartyRole pr) {
+	protected Mono<PartyRole> getCheckingMono(PartyRole pr) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		references.add(pr.getAccount());
 		references.add(pr.getAgreement());

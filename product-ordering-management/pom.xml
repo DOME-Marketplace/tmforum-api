@@ -232,6 +232,23 @@
                             </inputSpec>
                             <apiPackage>org.fiware.productordering.api.ext</apiPackage>
                             <modelPackage>org.fiware.productordering.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-product-order-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/product-order-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.productordering.api.ext</apiPackage>
+                            <modelPackage>org.fiware.productordering.model</modelPackage>
+                            <generateModels>false</generateModels>
                         </configuration>
                     </execution>
                 </executions>

@@ -6,6 +6,7 @@ import org.fiware.tmforum.common.notification.TMForumEventHandler;
 import org.fiware.tmforum.common.querying.QueryParser;
 import org.fiware.tmforum.common.repository.TmForumRepository;
 import org.fiware.tmforum.common.validation.ReferenceValidationService;
+import org.fiware.tmforum.resourcefunction.TMForumMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -26,13 +27,14 @@ class ExtendedMonitorApiControllerTest {
     @Mock private ReferenceValidationService validationService;
     @Mock private TmForumRepository repository;
     @Mock private TMForumEventHandler eventHandler;
+    @Mock private TMForumMapper tmForumMapper;
 
     private ExtendedMonitorApiController controller;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.initMocks(this);
-        controller = new ExtendedMonitorApiController(queryParser, validationService, repository, eventHandler);
+        controller = new ExtendedMonitorApiController(queryParser, validationService, repository, eventHandler, tmForumMapper);
     }
 
     private void setDeleteEnabled(boolean value) throws Exception {

@@ -47,7 +47,7 @@ public class MigrateApiController extends AbstractApiController<Migrate> impleme
 				.map(HttpResponse::created);
 	}
 
-	private Mono<Migrate> getCheckingMono(Migrate migrate) {
+	protected Mono<Migrate> getCheckingMono(Migrate migrate) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 
 		references.add(migrate.getAddConnectionPoint());

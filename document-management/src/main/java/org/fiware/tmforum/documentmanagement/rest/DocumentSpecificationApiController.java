@@ -136,7 +136,7 @@ public class DocumentSpecificationApiController extends AbstractApiController<Do
                 .map(HttpResponse::ok);
     }
 
-    private Mono<DocumentSpecification> getCheckingMono(DocumentSpecification docSpec) {
+    protected Mono<DocumentSpecification> getCheckingMono(DocumentSpecification docSpec) {
         List<List<? extends ReferencedEntity>> references = new ArrayList<>();
         references.add(docSpec.getRelatedParty());
 

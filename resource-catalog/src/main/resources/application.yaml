@@ -40,3 +40,5 @@ general:
 api:
   resource-catalog:
     basepath: ${general.basepath:/}
+apiExtension:
+  enabled: ${API_EXTENSION_ENABLED:false}

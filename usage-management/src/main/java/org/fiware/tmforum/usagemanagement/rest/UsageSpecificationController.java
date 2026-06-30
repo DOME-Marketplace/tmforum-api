@@ -50,7 +50,7 @@ public class UsageSpecificationController extends AbstractApiController<UsageSpe
                                 .map(HttpResponse::created);
         }
 
-        private Mono<UsageSpecification> getCheckingMono(UsageSpecification ug) {
+        protected Mono<UsageSpecification> getCheckingMono(UsageSpecification ug) {
                 List<List<? extends ReferencedEntity>> references = new ArrayList<>();
                 references.add(ug.getEntitySpecRelationship());
                 references.add(ug.getConstraint());

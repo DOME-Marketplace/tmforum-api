@@ -57,7 +57,7 @@ public class ResourceCategoryApiController extends AbstractApiController<Resourc
 				.map(HttpResponse::created);
 	}
 
-	private Mono<ResourceCategory> getCheckingMono(ResourceCategory resourceCategory) {
+	protected Mono<ResourceCategory> getCheckingMono(ResourceCategory resourceCategory) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		references.add(resourceCategory.getCategory());
 		references.add(resourceCategory.getRelatedParty());

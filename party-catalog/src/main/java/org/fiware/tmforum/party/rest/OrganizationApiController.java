@@ -50,7 +50,7 @@ public class OrganizationApiController extends AbstractPartyApiController<Organi
 				.map(HttpResponse::created);
 	}
 
-	private Mono<Organization> getCheckingMono(Organization organization) {
+	protected Mono<Organization> getCheckingMono(Organization organization) {
 		Optional.ofNullable(organization.getTaxExemptionCertificate()).ifPresent(this::validateTaxExemptions);
 		Optional.ofNullable(organization.getOrganizationIdentification())
 				.ifPresent(this::validateOrganizationIdentifications);

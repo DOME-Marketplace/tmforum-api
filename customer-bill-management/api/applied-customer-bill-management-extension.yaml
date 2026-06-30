@@ -64,6 +64,53 @@ paths:
           schema:
             $ref: '#/definitions/Error'
   /appliedCustomerBillingRate/{id}:
+    put:
+      operationId: createAppliedCustomerBillingRateWithId
+      summary: Creates an AppliedCustomerBillingRate with a caller-supplied ID
+      description: This operation creates an AppliedCustomerBillingRate entity with a caller-supplied NGSI-LD URI as its ID.
+      tags:
+        - appliedCustomerBillingRateExtension
+      parameters:
+        - name: id
+          description: Identifier of the AppliedCustomerBillingRate
+          required: true
+          type: string
+          in: path
+        - name: appliedCustomerBillingRate
+          description: The AppliedCustomerBillingRate to be created
+          required: true
+          schema:
+            $ref: '#/definitions/AppliedCustomerBillingRate_Create'
+          in: body
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/AppliedCustomerBillingRate'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '403':
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error'
+        '405':
+          description: Method Not allowed
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error'
     patch:
       operationId: updateAppliedCustomerBillingRate
       summary: Updates partially an AppliedCustomerBillingRate by ID

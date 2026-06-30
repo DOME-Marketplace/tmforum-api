@@ -77,7 +77,7 @@ public class ResourceSpecifcationApiController extends AbstractApiController<Res
 				.map(HttpResponse::created);
 	}
 
-	private Mono<ResourceSpecification> validateSpec(ResourceSpecification resourceSpecification) {
+	protected Mono<ResourceSpecification> validateSpec(ResourceSpecification resourceSpecification) {
 		Mono<ResourceSpecification> validatingMono = Mono.just(resourceSpecification);
 
 		if (resourceSpecification.getFeatureSpecification() != null && !resourceSpecification.getFeatureSpecification()
@@ -169,7 +169,7 @@ public class ResourceSpecifcationApiController extends AbstractApiController<Res
 				.ifPresent(references::add);
 	}
 
-	private Mono<ResourceSpecification> getCheckingMono(ResourceSpecification resourceSpecification) {
+	protected Mono<ResourceSpecification> getCheckingMono(ResourceSpecification resourceSpecification) {
 
 		if (resourceSpecification.getRelatedParty() != null && !resourceSpecification.getRelatedParty().isEmpty()) {
 			return getCheckingMono(resourceSpecification, List.of(resourceSpecification.getRelatedParty()))

@@ -49,7 +49,7 @@ public class BillingAccountApiController extends AbstractApiController<BillingAc
                 .map(HttpResponse::created);
     }
 
-    private Mono<BillingAccount> getCheckingMono(BillingAccount billingAccount) {
+    protected Mono<BillingAccount> getCheckingMono(BillingAccount billingAccount) {
         List<List<? extends ReferencedEntity>> references = new ArrayList<>();
         references.add(billingAccount.getRelatedParty());
         Optional.ofNullable(billingAccount.getDefaultPaymentMethod()).map(List::of).ifPresent(references::add);

@@ -49,7 +49,7 @@ public class ScaleApiController extends AbstractApiController<Scale> implements 
 
 	}
 
-	private Mono<Scale> getCheckingMono(Scale scale) {
+	protected Mono<Scale> getCheckingMono(Scale scale) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 
 		references.add(scale.getSchedule());

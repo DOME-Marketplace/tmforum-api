@@ -54,7 +54,7 @@ public class CustomerBillOnDemandApiController extends AbstractApiController<Cus
 				.map(HttpResponse::created);
 	}
 
-	private Mono<CustomerBillOnDemand> getCheckingMono(CustomerBillOnDemand customerBillOnDemand) {
+	protected Mono<CustomerBillOnDemand> getCheckingMono(CustomerBillOnDemand customerBillOnDemand) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		Optional.ofNullable(customerBillOnDemand.getBillingAccount()).map(List::of).ifPresent(references::add);
 		Optional.ofNullable(customerBillOnDemand.getRelatedParty()).map(List::of).ifPresent(references::add);

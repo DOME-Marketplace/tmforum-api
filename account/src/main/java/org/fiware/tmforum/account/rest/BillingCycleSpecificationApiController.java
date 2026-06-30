@@ -48,7 +48,7 @@ public class BillingCycleSpecificationApiController extends AbstractApiControlle
                 .map(HttpResponse::created);
     }
 
-    private Mono<BillingCycleSpecification> getCheckingMono(BillingCycleSpecification billingCycleSpecification) {
+    protected Mono<BillingCycleSpecification> getCheckingMono(BillingCycleSpecification billingCycleSpecification) {
         List<List<? extends ReferencedEntity>> references = new ArrayList<>();
         return getCheckingMono(billingCycleSpecification, references)
                 .onErrorMap(throwable -> new TmForumException(

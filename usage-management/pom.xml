@@ -202,6 +202,32 @@
                     <apiPackage>org.fiware.usagemanagement.api</apiPackage>
                     <modelPackage>org.fiware.usagemanagement.model</modelPackage>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>openapi-usage-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/${artifactId}/api/usage-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.usagemanagement.api.ext</apiPackage>
+                            <modelPackage>org.fiware.usagemanagement.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-usageSpecification-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/${artifactId}/api/usageSpecification-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.usagemanagement.api.ext</apiPackage>
+                            <modelPackage>org.fiware.usagemanagement.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <!-- add generated sources -->
             <plugin>

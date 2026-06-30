@@ -38,6 +38,12 @@ public abstract class TMForumMapper extends BaseMapper {
 
 	public abstract MonitorVO map(Monitor monitor);
 
+	@Mapping(target = "id", source = "id")
+	@Mapping(target = "href", source = "id")
+	public abstract MonitorVO map(MonitorVO monitorVO, URI id);
+
+	public abstract Monitor map(MonitorVO monitorVO);
+
 	// heal
 
 	@Mapping(target = "id", source = "id")
