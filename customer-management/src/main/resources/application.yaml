@@ -39,3 +39,6 @@ general:
 api:
   customer-management:
     basepath: ${general.basepath:/}
+---
+apiExtension:
+  enabled: ${API_EXTENSION_ENABLED:false}

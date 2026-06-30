@@ -208,6 +208,72 @@
                     <apiPackage>org.fiware.account.api</apiPackage>
                     <modelPackage>org.fiware.account.model</modelPackage>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>openapi-billing-account-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/billing-account-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.account.api.ext</apiPackage>
+                            <modelPackage>org.fiware.account.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-billing-cycle-specification-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/billing-cycle-specification-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.account.api.ext</apiPackage>
+                            <modelPackage>org.fiware.account.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-financial-account-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/financial-account-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.account.api.ext</apiPackage>
+                            <modelPackage>org.fiware.account.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-settlement-account-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/settlement-account-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.account.api.ext</apiPackage>
+                            <modelPackage>org.fiware.account.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <!-- add generated sources -->
             <plugin>

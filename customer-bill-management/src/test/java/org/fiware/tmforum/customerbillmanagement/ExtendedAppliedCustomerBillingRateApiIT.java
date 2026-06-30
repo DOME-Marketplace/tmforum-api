@@ -9,6 +9,7 @@ import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.fiware.customerbillmanagement.api.AppliedCustomerBillingRateApiTestClient;
 import org.fiware.customerbillmanagement.api.ext.AppliedCustomerBillingRateExtensionApiTestClient;
 import org.fiware.customerbillmanagement.api.ext.AppliedCustomerBillingRateExtensionApiTestSpec;
+import org.fiware.tmforum.common.mapping.IdHelper;
 import org.fiware.customerbillmanagement.model.*;
 import org.fiware.ngsi.api.EntitiesApiClient;
 import org.fiware.ngsi.model.EntityVO;
@@ -31,6 +32,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -109,6 +111,77 @@ public class ExtendedAppliedCustomerBillingRateApiIT extends AbstractApiIT imple
 		} catch (Exception e) {
 			// noop - might fail if already removed
 		}
+	}
+
+	@Test
+	@Override
+	public void createAppliedCustomerBillingRateWithId201() throws Exception {
+		Instant currentTimeInstant = Instant.ofEpochSecond(10000);
+		when(clock.instant()).thenReturn(currentTimeInstant);
+
+		String id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), AppliedCustomerBillingRate.TYPE_APPLIED_CUSTOMER_BILLING_RATE).toString();
+		AppliedCustomerBillingRateCreateVO createVO = AppliedCustomerBillingRateCreateVOTestExample.build().atSchemaLocation(null)
+				.isBilled(false).bill(null).product(null)
+				.billingAccount(BillingAccountRefVOTestExample.build().atSchemaLocation(null).id(BILLING_ACCOUNT_ID).href(BILLING_ACCOUNT_ID));
+
+		HttpResponse<AppliedCustomerBillingRateVO> response = callAndCatch(
+				() -> appliedCustomerBillingRateExtensionApiTestClient.createAppliedCustomerBillingRateWithId(null, id, createVO));
+		assertEquals(HttpStatus.CREATED, response.getStatus(), "AppliedCustomerBillingRate should have been created with the provided id.");
+		assertEquals(id, response.body().getId(), "The returned id should match the provided id.");
+	}
+
+	@Test
+	@Override
+	public void createAppliedCustomerBillingRateWithId400() throws Exception {
+		HttpResponse<AppliedCustomerBillingRateVO> response = callAndCatch(
+				() -> appliedCustomerBillingRateExtensionApiTestClient.createAppliedCustomerBillingRateWithId(null, "invalid-id",
+						AppliedCustomerBillingRateCreateVOTestExample.build().atSchemaLocation(null)
+								.isBilled(false).bill(null).product(null)
+								.billingAccount(BillingAccountRefVOTestExample.build().atSchemaLocation(null).id(BILLING_ACCOUNT_ID).href(BILLING_ACCOUNT_ID))));
+		assertEquals(HttpStatus.BAD_REQUEST, response.getStatus(), "A non NGSI-LD id should be rejected.");
+		Optional<ErrorDetails> optionalErrorDetails = response.getBody(ErrorDetails.class);
+		assertTrue(optionalErrorDetails.isPresent(), "Error details should be provided.");
+	}
+
+	@Disabled("Security is handled externally, thus 401 and 403 cannot happen.")
+	@Test
+	@Override
+	public void createAppliedCustomerBillingRateWithId401() throws Exception {
+	}
+
+	@Disabled("Security is handled externally, thus 401 and 403 cannot happen.")
+	@Test
+	@Override
+	public void createAppliedCustomerBillingRateWithId403() throws Exception {
+	}
+
+	@Disabled("Prohibited by the framework.")
+	@Test
+	@Override
+	public void createAppliedCustomerBillingRateWithId405() throws Exception {
+	}
+
+	@Test
+	@Override
+	public void createAppliedCustomerBillingRateWithId409() throws Exception {
+		when(clock.instant()).thenReturn(Instant.ofEpochSecond(10000));
+
+		String id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), AppliedCustomerBillingRate.TYPE_APPLIED_CUSTOMER_BILLING_RATE).toString();
+		AppliedCustomerBillingRateCreateVO createVO = AppliedCustomerBillingRateCreateVOTestExample.build().atSchemaLocation(null)
+				.isBilled(false).bill(null).product(null)
+				.billingAccount(BillingAccountRefVOTestExample.build().atSchemaLocation(null).id(BILLING_ACCOUNT_ID).href(BILLING_ACCOUNT_ID));
+
+		HttpResponse<AppliedCustomerBillingRateVO> first = callAndCatch(
+				() -> appliedCustomerBillingRateExtensionApiTestClient.createAppliedCustomerBillingRateWithId(null, id, createVO));
+		assertEquals(HttpStatus.CREATED, first.getStatus(), "First creation should succeed.");
+
+		HttpResponse<AppliedCustomerBillingRateVO> second = callAndCatch(
+				() -> appliedCustomerBillingRateExtensionApiTestClient.createAppliedCustomerBillingRateWithId(null, id, createVO));
+		assertEquals(HttpStatus.CONFLICT, second.getStatus(), "Second creation with the same id should fail.");
+	}
+
+	@Override
+	public void createAppliedCustomerBillingRateWithId500() throws Exception {
 	}
 
 	@ParameterizedTest

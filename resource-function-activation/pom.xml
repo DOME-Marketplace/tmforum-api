@@ -212,6 +212,7 @@
                             </inputSpec>
                             <apiPackage>org.fiware.resourcefunction.api.ext</apiPackage>
                             <modelPackage>org.fiware.resourcefunction.model</modelPackage>
+                            <generateModels>false</generateModels>
                         </configuration>
                     </execution>
                     <execution>
@@ -227,6 +228,7 @@
                             </inputSpec>
                             <apiPackage>org.fiware.resourcefunction.api.ext</apiPackage>
                             <modelPackage>org.fiware.resourcefunction.model</modelPackage>
+                            <generateModels>false</generateModels>
                         </configuration>
                     </execution>
                     <execution>
@@ -242,6 +244,7 @@
                             </inputSpec>
                             <apiPackage>org.fiware.resourcefunction.api.ext</apiPackage>
                             <modelPackage>org.fiware.resourcefunction.model</modelPackage>
+                            <generateModels>false</generateModels>
                         </configuration>
                     </execution>
                     <execution>
@@ -257,6 +260,23 @@
                             </inputSpec>
                             <apiPackage>org.fiware.resourcefunction.api.ext</apiPackage>
                             <modelPackage>org.fiware.resourcefunction.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-function-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/function-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.resourcefunction.api.ext</apiPackage>
+                            <modelPackage>org.fiware.resourcefunction.model</modelPackage>
+                            <generateModels>false</generateModels>
                         </configuration>
                     </execution>
                 </executions>

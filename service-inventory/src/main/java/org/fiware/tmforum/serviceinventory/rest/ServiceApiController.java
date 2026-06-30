@@ -52,7 +52,7 @@ public class ServiceApiController extends AbstractApiController<Service> impleme
                 .map(HttpResponse::created);
     }
 
-    private Mono<Service> getCheckingMono(Service service) {
+    protected Mono<Service> getCheckingMono(Service service) {
 
         List<List<? extends ReferencedEntity>> references = new ArrayList<>();
         references.add(service.getSupportingService());
@@ -95,7 +95,7 @@ public class ServiceApiController extends AbstractApiController<Service> impleme
                                 TmForumExceptionReason.INVALID_RELATIONSHIP));
     }
 
-    private void validateInternalRefs(Service service) {
+    protected void validateInternalRefs(Service service) {
         if (service.getNote() != null) {
             List<URI> noteIds = service.getNote().stream().map(Note::getTmfId).toList();
             if (noteIds.size() != new HashSet<>(noteIds).size()) {

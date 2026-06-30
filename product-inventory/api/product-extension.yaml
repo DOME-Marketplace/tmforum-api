@@ -1,0 +1,43 @@
+openapi: 3.0.3
+info:
+  title: API Product inventory extension
+  version: 4.0.0
+tags:
+  - name: productExtension
+paths:
+  /product/{id}:
+    put:
+      operationId: createProductWithId
+      tags: [productExtension]
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json;charset=utf-8:
+            schema: { $ref: '#/components/schemas/Product_Create' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json;charset=utf-8:
+              schema: { $ref: '#/components/schemas/Product' }
+        '400': { description: Bad Request }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden }
+        '405': { description: Method Not Allowed }
+        '409': { description: Conflict }
+        '500': { description: Internal Server Error }
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id: { type: string }
+    Product_Create:
+      type: object
+      properties:
+        name: { type: string }

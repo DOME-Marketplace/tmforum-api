@@ -58,7 +58,7 @@ public class QuoteApiController extends AbstractApiController<Quote> implements 
 	}
 
 
-	private Mono<Quote> getCheckingMono(Quote quote) {
+	protected Mono<Quote> getCheckingMono(Quote quote) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		references.add(quote.getAgreement());
 		references.add(quote.getBillingAccount());

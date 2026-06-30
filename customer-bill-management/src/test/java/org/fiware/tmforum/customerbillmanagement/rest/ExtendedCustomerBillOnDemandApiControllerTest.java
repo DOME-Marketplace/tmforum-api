@@ -6,6 +6,7 @@ import org.fiware.tmforum.common.notification.TMForumEventHandler;
 import org.fiware.tmforum.common.querying.QueryParser;
 import org.fiware.tmforum.common.repository.TmForumRepository;
 import org.fiware.tmforum.common.validation.ReferenceValidationService;
+import org.fiware.tmforum.customerbillmanagement.TMForumMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -26,13 +27,15 @@ class ExtendedCustomerBillOnDemandApiControllerTest {
     @Mock private ReferenceValidationService validationService;
     @Mock private TmForumRepository repository;
     @Mock private TMForumEventHandler eventHandler;
+    @Mock private TMForumMapper tmForumMapper;
+    @Mock private CustomerBillOnDemandApiController customerBillOnDemandApiController;
 
     private ExtendedCustomerBillOnDemandApiController controller;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.initMocks(this);
-        controller = new ExtendedCustomerBillOnDemandApiController(queryParser, validationService, repository, eventHandler);
+        controller = new ExtendedCustomerBillOnDemandApiController(queryParser, validationService, repository, eventHandler, tmForumMapper, customerBillOnDemandApiController);
     }
 
     private void setDeleteEnabled(boolean value) throws Exception {

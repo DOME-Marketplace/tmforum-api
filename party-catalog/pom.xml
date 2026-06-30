@@ -184,6 +184,40 @@
                     <apiPackage>org.fiware.party.api</apiPackage>
                     <modelPackage>org.fiware.party.model</modelPackage>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>openapi-individual-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/individual-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.party.api.ext</apiPackage>
+                            <modelPackage>org.fiware.party.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-organization-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>
+                                ${project.parent.basedir}/${artifactId}/api/organization-extension.yaml
+                            </inputSpec>
+                            <apiPackage>org.fiware.party.api.ext</apiPackage>
+                            <modelPackage>org.fiware.party.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <!-- add generated sources -->
             <plugin>

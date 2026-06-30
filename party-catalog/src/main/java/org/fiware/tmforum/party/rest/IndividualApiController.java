@@ -48,7 +48,7 @@ public class IndividualApiController extends AbstractPartyApiController<Individu
 				.map(HttpResponse::created);
 	}
 
-	private Mono<Individual> getCheckingMono(Individual individual) {
+	protected Mono<Individual> getCheckingMono(Individual individual) {
 		Optional.ofNullable(individual.getTaxExemptionCertificate()).ifPresent(this::validateTaxExemptions);
 		Optional.ofNullable(individual.getIndividualIdentification())
 				.ifPresent(this::validateIndividualIdentifications);

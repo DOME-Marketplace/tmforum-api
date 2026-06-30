@@ -11,8 +11,10 @@ import org.fiware.ngsi.model.EntityVO;
 import org.fiware.resourcefunction.api.MonitorApiTestClient;
 import org.fiware.resourcefunction.api.ext.MonitorExtensionApiTestClient;
 import org.fiware.resourcefunction.api.ext.MonitorExtensionApiTestSpec;
+import org.fiware.resourcefunction.model.MonitorVO;
 import org.fiware.tmforum.common.configuration.GeneralProperties;
 import org.fiware.tmforum.common.exception.ErrorDetails;
+import org.fiware.tmforum.common.mapping.IdHelper;
 import org.fiware.tmforum.common.notification.TMForumEventHandler;
 import org.fiware.tmforum.common.test.AbstractApiIT;
 import org.fiware.tmforum.resourcefunction.domain.Monitor;
@@ -60,6 +62,63 @@ public class ExtendedMonitorApiIT extends AbstractApiIT implements MonitorExtens
     @Override
     protected String getEntityType() {
         return Monitor.TYPE_MONITOR;
+    }
+
+    @Test
+    @Override
+    public void createMonitorWithId201() throws Exception {
+        String id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), Monitor.TYPE_MONITOR).toString();
+
+        HttpResponse<MonitorVO> response = callAndCatch(
+                () -> extensionTestClient.createMonitorWithId(null, id, new MonitorVO()));
+        assertEquals(HttpStatus.CREATED, response.getStatus(), "Monitor should have been created with the provided id.");
+        assertEquals(id, response.body().getId(), "The returned id should match the provided id.");
+    }
+
+    @Test
+    @Override
+    public void createMonitorWithId400() throws Exception {
+        HttpResponse<MonitorVO> response = callAndCatch(
+                () -> extensionTestClient.createMonitorWithId(null, "invalid-id", new MonitorVO()));
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatus(), "A non NGSI-LD id should be rejected.");
+        Optional<ErrorDetails> optionalErrorDetails = response.getBody(ErrorDetails.class);
+        assertTrue(optionalErrorDetails.isPresent(), "Error details should be provided.");
+    }
+
+    @Disabled("Security is handled externally.")
+    @Test
+    @Override
+    public void createMonitorWithId401() throws Exception {
+    }
+
+    @Disabled("Security is handled externally.")
+    @Test
+    @Override
+    public void createMonitorWithId403() throws Exception {
+    }
+
+    @Disabled("Prohibited by the framework.")
+    @Test
+    @Override
+    public void createMonitorWithId405() throws Exception {
+    }
+
+    @Test
+    @Override
+    public void createMonitorWithId409() throws Exception {
+        String id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), Monitor.TYPE_MONITOR).toString();
+
+        HttpResponse<MonitorVO> firstResponse = callAndCatch(
+                () -> extensionTestClient.createMonitorWithId(null, id, new MonitorVO()));
+        assertEquals(HttpStatus.CREATED, firstResponse.getStatus(), "First creation should succeed.");
+
+        HttpResponse<MonitorVO> secondResponse = callAndCatch(
+                () -> extensionTestClient.createMonitorWithId(null, id, new MonitorVO()));
+        assertEquals(HttpStatus.CONFLICT, secondResponse.getStatus(), "Second creation with the same id should fail.");
+    }
+
+    @Override
+    public void createMonitorWithId500() throws Exception {
     }
 
     @Test

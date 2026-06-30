@@ -15,6 +15,7 @@ import org.fiware.resourcefunction.model.MigrateCreateVOTestExample;
 import org.fiware.resourcefunction.model.MigrateVO;
 import org.fiware.tmforum.common.configuration.GeneralProperties;
 import org.fiware.tmforum.common.exception.ErrorDetails;
+import org.fiware.tmforum.common.mapping.IdHelper;
 import org.fiware.tmforum.common.notification.TMForumEventHandler;
 import org.fiware.tmforum.common.test.AbstractApiIT;
 import org.fiware.tmforum.resourcefunction.domain.Migrate;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -60,13 +62,72 @@ public class ExtendedMigrateApiIT extends AbstractApiIT implements MigrateExtens
         return Migrate.TYPE_MIGRATE;
     }
 
+    private static MigrateCreateVO buildCreateVO() {
+        return MigrateCreateVOTestExample.build().atSchemaLocation(null).resourceFunction(null).place(null);
+    }
+
+    @Test
+    @Override
+    public void createMigrateWithId201() throws Exception {
+        String id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), Migrate.TYPE_MIGRATE).toString();
+
+        HttpResponse<MigrateVO> response = callAndCatch(
+                () -> extensionTestClient.createMigrateWithId(null, id, buildCreateVO()));
+        assertEquals(HttpStatus.CREATED, response.getStatus(), "Migrate should have been created with the provided id.");
+        assertEquals(id, response.body().getId(), "The returned id should match the provided id.");
+    }
+
+    @Test
+    @Override
+    public void createMigrateWithId400() throws Exception {
+        HttpResponse<MigrateVO> response = callAndCatch(
+                () -> extensionTestClient.createMigrateWithId(null, "invalid-id", buildCreateVO()));
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatus(), "A non NGSI-LD id should be rejected.");
+        Optional<ErrorDetails> optionalErrorDetails = response.getBody(ErrorDetails.class);
+        assertTrue(optionalErrorDetails.isPresent(), "Error details should be provided.");
+    }
+
+    @Disabled("Security is handled externally.")
+    @Test
+    @Override
+    public void createMigrateWithId401() throws Exception {
+    }
+
+    @Disabled("Security is handled externally.")
+    @Test
+    @Override
+    public void createMigrateWithId403() throws Exception {
+    }
+
+    @Disabled("Prohibited by the framework.")
+    @Test
+    @Override
+    public void createMigrateWithId405() throws Exception {
+    }
+
+    @Test
+    @Override
+    public void createMigrateWithId409() throws Exception {
+        String id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), Migrate.TYPE_MIGRATE).toString();
+
+        HttpResponse<MigrateVO> firstResponse = callAndCatch(
+                () -> extensionTestClient.createMigrateWithId(null, id, buildCreateVO()));
+        assertEquals(HttpStatus.CREATED, firstResponse.getStatus(), "First creation should succeed.");
+
+        HttpResponse<MigrateVO> secondResponse = callAndCatch(
+                () -> extensionTestClient.createMigrateWithId(null, id, buildCreateVO()));
+        assertEquals(HttpStatus.CONFLICT, secondResponse.getStatus(), "Second creation with the same id should fail.");
+    }
+
+    @Override
+    public void createMigrateWithId500() throws Exception {
+    }
+
     @Test
     @Override
     public void deleteMigrate204() throws Exception {
-        MigrateCreateVO createVO = MigrateCreateVOTestExample.build().atSchemaLocation(null).resourceFunction(null).place(null);
-
         HttpResponse<MigrateVO> createResponse = callAndCatch(
-                () -> baseTestClient.createMigrate(null, createVO));
+                () -> baseTestClient.createMigrate(null, buildCreateVO()));
         assertEquals(HttpStatus.CREATED, createResponse.getStatus(), "Migrate should have been created.");
         String id = createResponse.body().getId();
 

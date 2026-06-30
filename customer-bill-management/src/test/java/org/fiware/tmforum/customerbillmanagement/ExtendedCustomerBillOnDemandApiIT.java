@@ -15,6 +15,7 @@ import org.fiware.customerbillmanagement.model.CustomerBillOnDemandVO;
 import org.fiware.ngsi.api.EntitiesApiClient;
 import org.fiware.tmforum.common.configuration.GeneralProperties;
 import org.fiware.tmforum.common.exception.ErrorDetails;
+import org.fiware.tmforum.common.mapping.IdHelper;
 import org.fiware.tmforum.common.notification.TMForumEventHandler;
 import org.fiware.tmforum.common.test.AbstractApiIT;
 import org.fiware.tmforum.customerbillmanagement.domain.CustomerBillOnDemand;
@@ -24,6 +25,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -60,6 +62,73 @@ public class ExtendedCustomerBillOnDemandApiIT extends AbstractApiIT
     @Override
     protected String getEntityType() {
         return CustomerBillOnDemand.TYPE_CUSTOMER_BILL_ON_DEMAND;
+    }
+
+    @Test
+    @Override
+    public void createCustomerBillOnDemandWithId201() throws Exception {
+        String id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), CustomerBillOnDemand.TYPE_CUSTOMER_BILL_ON_DEMAND).toString();
+        CustomerBillOnDemandCreateVO createVO = CustomerBillOnDemandCreateVOTestExample.build()
+                .atSchemaLocation(null)
+                .lastUpdate(null)
+                .billingAccount(null)
+                .relatedParty(null)
+                .customerBill(null);
+
+        HttpResponse<CustomerBillOnDemandVO> response = callAndCatch(
+                () -> extensionTestClient.createCustomerBillOnDemandWithId(null, id, createVO));
+        assertEquals(HttpStatus.CREATED, response.getStatus(), "CustomerBillOnDemand should have been created with the provided id.");
+        assertEquals(id, response.body().getId(), "The returned id should match the provided id.");
+    }
+
+    @Test
+    @Override
+    public void createCustomerBillOnDemandWithId400() throws Exception {
+        HttpResponse<CustomerBillOnDemandVO> response = callAndCatch(
+                () -> extensionTestClient.createCustomerBillOnDemandWithId(null, "invalid-id",
+                        CustomerBillOnDemandCreateVOTestExample.build()
+                                .atSchemaLocation(null).billingAccount(null).relatedParty(null).customerBill(null)));
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatus(), "A non NGSI-LD id should be rejected.");
+        Optional<ErrorDetails> optionalErrorDetails = response.getBody(ErrorDetails.class);
+        assertTrue(optionalErrorDetails.isPresent(), "Error details should be provided.");
+    }
+
+    @Disabled("Security is handled externally, thus 401 and 403 cannot happen.")
+    @Test
+    @Override
+    public void createCustomerBillOnDemandWithId401() throws Exception {
+    }
+
+    @Disabled("Security is handled externally, thus 401 and 403 cannot happen.")
+    @Test
+    @Override
+    public void createCustomerBillOnDemandWithId403() throws Exception {
+    }
+
+    @Disabled("Prohibited by the framework.")
+    @Test
+    @Override
+    public void createCustomerBillOnDemandWithId405() throws Exception {
+    }
+
+    @Test
+    @Override
+    public void createCustomerBillOnDemandWithId409() throws Exception {
+        String id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), CustomerBillOnDemand.TYPE_CUSTOMER_BILL_ON_DEMAND).toString();
+        CustomerBillOnDemandCreateVO createVO = CustomerBillOnDemandCreateVOTestExample.build()
+                .atSchemaLocation(null).lastUpdate(null).billingAccount(null).relatedParty(null).customerBill(null);
+
+        HttpResponse<CustomerBillOnDemandVO> first = callAndCatch(
+                () -> extensionTestClient.createCustomerBillOnDemandWithId(null, id, createVO));
+        assertEquals(HttpStatus.CREATED, first.getStatus(), "First creation should succeed.");
+
+        HttpResponse<CustomerBillOnDemandVO> second = callAndCatch(
+                () -> extensionTestClient.createCustomerBillOnDemandWithId(null, id, createVO));
+        assertEquals(HttpStatus.CONFLICT, second.getStatus(), "Second creation with the same id should fail.");
+    }
+
+    @Override
+    public void createCustomerBillOnDemandWithId500() throws Exception {
     }
 
     @Test

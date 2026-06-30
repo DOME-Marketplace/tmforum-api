@@ -22,6 +22,7 @@ import org.fiware.tmforum.customerbillmanagement.TMForumMapper;
 import org.fiware.tmforum.customerbillmanagement.domain.AppliedCustomerBillingRate;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +44,26 @@ public class ExtendedAppliedCustomerBillingRateApiController extends AbstractApi
         super(queryParser, validationService, repository, eventHandler);
         this.tmForumMapper = tmForumMapper;
         this.clock = clock;
+    }
+
+    @Override
+    public Mono<HttpResponse<AppliedCustomerBillingRateVO>> createAppliedCustomerBillingRateWithId(String id, AppliedCustomerBillingRateCreateVO createVO) {
+        if (!IdHelper.isNgsiLdId(id)) {
+            throw new TmForumException(
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    TmForumExceptionReason.INVALID_DATA);
+        }
+        if (getNullSafeBoolean(createVO.getIsBilled()) && createVO.getBill() == null) {
+            throw new TmForumException("If an AppliedCustomerBillingRate is billed, the bill needs to be included.", TmForumExceptionReason.INVALID_DATA);
+        }
+        if (!getNullSafeBoolean(createVO.getIsBilled()) && createVO.getBillingAccount() == null) {
+            throw new TmForumException("If an AppliedCustomerBillingRate is not yet billed, the billing account needs to be included.", TmForumExceptionReason.INVALID_DATA);
+        }
+        AppliedCustomerBillingRate entity = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));
+        entity.setDate(clock.instant());
+        return create(getCheckingMono(entity), AppliedCustomerBillingRate.class)
+                .map(tmForumMapper::map)
+                .map(HttpResponse::created);
     }
 
     @Override

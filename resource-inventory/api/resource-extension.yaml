@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: API Resource extension
+  description: |-
+    ## TMF API Reference: TMF 639 - Resource Inventory Management
+
+    Extension adding PUT (create with custom ID) support for Resource.
+  version: 4.0.0
+tags:
+  - name: resourceExtension
+paths:
+  /resource/{id}:
+    put:
+      operationId: createResourceWithId
+      summary: Creates a Resource with a caller-supplied NGSI-LD ID
+      tags:
+        - resourceExtension
+      parameters:
+        - name: id
+          description: NGSI-LD URN for the Resource to create
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json;charset=utf-8:
+            schema:
+              $ref: '#/components/schemas/Resource_Create'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json;charset=utf-8:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '405':
+          description: Method Not Allowed
+        '409':
+          description: Conflict
+        '500':
+          description: Internal Server Error
+components:
+  schemas:
+    Resource:
+      type: object
+      properties:
+        id:
+          type: string
+    Resource_Create:
+      type: object
+      properties:
+        name:
+          type: string

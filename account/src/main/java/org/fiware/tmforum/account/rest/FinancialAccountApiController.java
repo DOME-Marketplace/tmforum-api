@@ -48,7 +48,7 @@ public class FinancialAccountApiController extends AbstractApiController<Financi
                 .map(HttpResponse::created);
     }
 
-    private Mono<FinancialAccount> getCheckingMono(FinancialAccount financialAccount) {
+    protected Mono<FinancialAccount> getCheckingMono(FinancialAccount financialAccount) {
         List<List<? extends ReferencedEntity>> references = new ArrayList<>();
         references.add(financialAccount.getRelatedParty());
         return getCheckingMono(financialAccount, references)
