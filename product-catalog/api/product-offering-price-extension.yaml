@@ -1,0 +1,49 @@
+openapi: 3.0.3
+info:
+  title: API ProductOfferingPrice extension
+  version: 4.0.0
+tags:
+  - name: productOfferingPriceExtension
+security:
+  - bearerAuth: []
+paths:
+  /productOfferingPrice/{id}:
+    put:
+      operationId: createProductOfferingPriceWithId
+      tags: [productOfferingPriceExtension]
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json;charset=utf-8:
+            schema: { $ref: '#/components/schemas/ProductOfferingPrice_Create' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json;charset=utf-8:
+              schema: { $ref: '#/components/schemas/ProductOfferingPrice' }
+        '400': { description: Bad Request }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden }
+        '405': { description: Method Not Allowed }
+        '409': { description: Conflict }
+        '500': { description: Internal Server Error }
+components:
+  schemas:
+    ProductOfferingPrice:
+      type: object
+      properties:
+        id: { type: string }
+    ProductOfferingPrice_Create:
+      type: object
+      properties:
+        name: { type: string }
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

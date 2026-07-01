@@ -54,7 +54,7 @@ public class ProductOfferingApiController extends AbstractProductCatalogApiContr
 				.map(HttpResponse::created);
 	}
 
-	private Mono<ProductOffering> getCheckingMono(ProductOffering productOffering) {
+	protected Mono<ProductOffering> getCheckingMono(ProductOffering productOffering) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		references.add(productOffering.getAgreement());
 		references.add(productOffering.getCategory());

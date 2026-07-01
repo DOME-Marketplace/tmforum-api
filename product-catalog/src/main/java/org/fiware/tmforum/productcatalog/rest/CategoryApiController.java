@@ -53,7 +53,7 @@ public class CategoryApiController extends AbstractApiController<Category> imple
 				.map(HttpResponse::created);
 	}
 
-	private Mono<Category> getCheckingMono(Category category) {
+	protected Mono<Category> getCheckingMono(Category category) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		Optional.ofNullable(category.getSubCategory()).ifPresent(references::add);
 		Optional.ofNullable(category.getParentId()).ifPresent(sub -> references.add(List.of(sub)));

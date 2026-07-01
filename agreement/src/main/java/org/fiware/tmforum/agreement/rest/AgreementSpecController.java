@@ -50,7 +50,7 @@ public class AgreementSpecController extends AbstractApiController<AgreementSpec
                                 .map(HttpResponse::created);
         }
 
-        private Mono<AgreementSpecification> getCheckingMono(AgreementSpecification ag) {
+        protected Mono<AgreementSpecification> getCheckingMono(AgreementSpecification ag) {
                 List<List<? extends ReferencedEntity>> references = new ArrayList<>();
                 references.add(ag.getRelatedParty());
                 references.add(ag.getSpecificationRelationship());

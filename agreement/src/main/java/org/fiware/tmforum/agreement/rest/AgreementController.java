@@ -48,7 +48,7 @@ public class AgreementController extends AbstractApiController<Agreement> implem
 				.map(HttpResponse::created);
 	}
 
-	private Mono<Agreement> getCheckingMono(Agreement agreement) {
+	protected Mono<Agreement> getCheckingMono(Agreement agreement) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		references.add(agreement.getEngagedParty());
 		references.add(agreement.getAssociatedAgreement());

@@ -54,7 +54,7 @@ public class ProductOfferingPriceApiController extends AbstractProductCatalogApi
 				.map(HttpResponse::created);
 	}
 
-	private Mono<ProductOfferingPrice> getCheckingMono(ProductOfferingPrice productOfferingPrice) {
+	protected Mono<ProductOfferingPrice> getCheckingMono(ProductOfferingPrice productOfferingPrice) {
 		Optional.ofNullable(productOfferingPrice.getPricingLogicAlgorithm())
 				.ifPresent(this::validatePricingLogicAlgorithm);
 		Optional.ofNullable(productOfferingPrice.getTax())

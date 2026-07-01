@@ -216,6 +216,32 @@
                     <apiPackage>org.fiware.agreement.api</apiPackage>
                     <modelPackage>org.fiware.agreement.model</modelPackage>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>openapi-agreement-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/${project.artifactId}/api/agreement-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.agreement.api.ext</apiPackage>
+                            <modelPackage>org.fiware.agreement.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-agreement-specification-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/${project.artifactId}/api/agreement-specification-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.agreement.api.ext</apiPackage>
+                            <modelPackage>org.fiware.agreement.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <!-- add generated sources -->
             <plugin>
