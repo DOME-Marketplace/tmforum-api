@@ -218,6 +218,68 @@
                     <apiPackage>org.fiware.productcatalog.api</apiPackage>
                     <modelPackage>org.fiware.productcatalog.model</modelPackage>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>openapi-catalog-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/${project.artifactId}/api/catalog-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.productcatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.productcatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-category-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/${project.artifactId}/api/category-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.productcatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.productcatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-product-offering-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/${project.artifactId}/api/product-offering-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.productcatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.productcatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-product-offering-price-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/${project.artifactId}/api/product-offering-price-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.productcatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.productcatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openapi-product-specification-api-extension</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/${project.artifactId}/api/product-specification-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.productcatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.productcatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <!-- add generated sources -->
             <plugin>

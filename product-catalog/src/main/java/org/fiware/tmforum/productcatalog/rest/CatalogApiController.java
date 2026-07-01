@@ -56,7 +56,7 @@ public class CatalogApiController extends AbstractApiController<Catalog> impleme
                 .map(HttpResponse::created);
     }
 
-    private Mono<Catalog> getCheckingMono(Catalog catalog) {
+    protected Mono<Catalog> getCheckingMono(Catalog catalog) {
         List<List<? extends ReferencedEntity>> references = new ArrayList<>();
         references.add(catalog.getCategory());
         references.add(catalog.getRelatedParty());

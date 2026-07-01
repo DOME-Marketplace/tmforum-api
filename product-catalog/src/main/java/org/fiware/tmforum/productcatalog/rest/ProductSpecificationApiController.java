@@ -54,7 +54,7 @@ public class ProductSpecificationApiController extends AbstractProductCatalogApi
 
 	}
 
-	private Mono<ProductSpecification> getCheckingMono(ProductSpecification productSpecification) {
+	protected Mono<ProductSpecification> getCheckingMono(ProductSpecification productSpecification) {
 		Optional.ofNullable(productSpecification.getProductSpecCharacteristic())
 				.ifPresent(this::validateProductSpecificationCharacteristic);
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();

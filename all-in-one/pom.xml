@@ -809,6 +809,92 @@
                             <generateModels>false</generateModels>
                         </configuration>
                     </execution>
+                    <!-- product-catalog extension APIs -->
+                    <execution>
+                        <id>product-catalog-ext-catalog</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/product-catalog/api/catalog-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.productcatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.productcatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>product-catalog-ext-category</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/product-catalog/api/category-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.productcatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.productcatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>product-catalog-ext-product-offering</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/product-catalog/api/product-offering-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.productcatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.productcatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>product-catalog-ext-product-offering-price</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/product-catalog/api/product-offering-price-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.productcatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.productcatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>product-catalog-ext-product-specification</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/product-catalog/api/product-specification-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.productcatalog.api.ext</apiPackage>
+                            <modelPackage>org.fiware.productcatalog.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <!-- agreement extension APIs -->
+                    <execution>
+                        <id>agreement-ext-agreement</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/agreement/api/agreement-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.agreement.api.ext</apiPackage>
+                            <modelPackage>org.fiware.agreement.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>agreement-ext-agreement-specification</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>generate</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <inputSpec>${project.parent.basedir}/agreement/api/agreement-specification-extension.yaml</inputSpec>
+                            <apiPackage>org.fiware.agreement.api.ext</apiPackage>
+                            <modelPackage>org.fiware.agreement.model</modelPackage>
+                            <generateModels>false</generateModels>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 
