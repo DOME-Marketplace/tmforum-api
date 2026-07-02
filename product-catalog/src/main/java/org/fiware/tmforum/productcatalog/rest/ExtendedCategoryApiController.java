@@ -41,9 +41,9 @@ public class ExtendedCategoryApiController extends AbstractApiController<Categor
 
     @Override
     public Mono<HttpResponse<CategoryVO>> createCategoryWithId(String id, CategoryCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, Category.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Category.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         Category category = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

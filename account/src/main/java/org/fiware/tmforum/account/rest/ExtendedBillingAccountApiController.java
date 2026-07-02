@@ -41,9 +41,9 @@ public class ExtendedBillingAccountApiController extends AbstractApiController<B
 
     @Override
     public Mono<HttpResponse<BillingAccountVO>> createBillingAccountWithId(String id, BillingAccountCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, BillingAccount.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, BillingAccount.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         BillingAccount billingAccount = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

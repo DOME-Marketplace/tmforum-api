@@ -41,9 +41,9 @@ public class ExtendedCustomerApiController extends AbstractApiController<Custome
 
     @Override
     public Mono<HttpResponse<CustomerVO>> createCustomerWithId(String id, CustomerCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, Customer.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Customer.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         Customer customer = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

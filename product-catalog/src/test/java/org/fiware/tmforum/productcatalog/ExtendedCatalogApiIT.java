@@ -82,6 +82,18 @@ public class ExtendedCatalogApiIT extends AbstractApiIT implements CatalogExtens
         assertTrue(optionalErrorDetails.isPresent(), "Error details should be provided.");
     }
 
+    @Test
+    public void createCatalogWithIdWrongType() throws Exception {
+        String id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), "s").toString();
+
+        HttpResponse<CatalogVO> response = callAndCatch(
+                () -> testClient.createCatalogWithId(null, id, buildCreateVO()));
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatus(),
+                "A well-formed NGSI-LD id whose type segment does not match the entity type should be rejected.");
+        Optional<ErrorDetails> optionalErrorDetails = response.getBody(ErrorDetails.class);
+        assertTrue(optionalErrorDetails.isPresent(), "Error details should be provided.");
+    }
+
     @Disabled("Security is handled externally.")
     @Test
     @Override

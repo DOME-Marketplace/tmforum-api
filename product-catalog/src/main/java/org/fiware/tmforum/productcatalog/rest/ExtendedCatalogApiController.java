@@ -41,9 +41,9 @@ public class ExtendedCatalogApiController extends AbstractApiController<Catalog>
 
     @Override
     public Mono<HttpResponse<CatalogVO>> createCatalogWithId(String id, CatalogCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, Catalog.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Catalog.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         Catalog catalog = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

@@ -41,9 +41,9 @@ public class ExtendedPartyRoleController extends AbstractApiController<PartyRole
 
     @Override
     public Mono<HttpResponse<PartyRoleVO>> createPartyRoleWithId(String id, PartyRoleCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, PartyRole.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, PartyRole.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         PartyRole partyRole = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

@@ -41,9 +41,9 @@ public class ExtendedAgreementSpecificationApiController extends AbstractApiCont
 
     @Override
     public Mono<HttpResponse<AgreementSpecificationVO>> createAgreementSpecificationWithId(String id, AgreementSpecificationCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, AgreementSpecification.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, AgreementSpecification.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         AgreementSpecification agreementSpecification = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

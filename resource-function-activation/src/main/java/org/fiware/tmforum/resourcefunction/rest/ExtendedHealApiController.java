@@ -49,9 +49,9 @@ public class ExtendedHealApiController extends AbstractApiController<Heal>
 
     @Override
     public Mono<HttpResponse<HealVO>> createHealWithId(String id, HealCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, Heal.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Heal.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         Heal heal = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

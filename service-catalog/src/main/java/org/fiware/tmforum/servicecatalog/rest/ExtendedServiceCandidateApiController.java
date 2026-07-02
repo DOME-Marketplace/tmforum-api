@@ -48,9 +48,9 @@ public class ExtendedServiceCandidateApiController extends AbstractApiController
 
     @Override
     public Mono<HttpResponse<ServiceCandidateVO>> createServiceCandidateWithId(String id, ServiceCandidateCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, ServiceCandidate.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, ServiceCandidate.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         ServiceCandidate serviceCandidate = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

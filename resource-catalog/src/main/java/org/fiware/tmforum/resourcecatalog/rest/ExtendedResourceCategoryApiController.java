@@ -44,9 +44,9 @@ public class ExtendedResourceCategoryApiController extends AbstractApiController
 
     @Override
     public Mono<HttpResponse<ResourceCategoryVO>> createResourceCategoryWithId(String id, ResourceCategoryCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, ResourceCategory.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, ResourceCategory.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         ResourceCategory resourceCategory = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));
