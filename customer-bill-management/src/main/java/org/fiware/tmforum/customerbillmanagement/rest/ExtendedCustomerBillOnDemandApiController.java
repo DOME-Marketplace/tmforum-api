@@ -49,9 +49,9 @@ public class ExtendedCustomerBillOnDemandApiController extends AbstractApiContro
 
     @Override
     public Mono<HttpResponse<CustomerBillOnDemandVO>> createCustomerBillOnDemandWithId(String id, CustomerBillOnDemandCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, CustomerBillOnDemand.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, CustomerBillOnDemand.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         CustomerBillOnDemand entity = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

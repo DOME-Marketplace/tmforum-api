@@ -2,7 +2,6 @@ package org.fiware.tmforum.common.repository;
 
 import io.github.wistefan.mapping.EntityVOMapper;
 import io.github.wistefan.mapping.JavaObjectMapper;
-import io.github.wistefan.mapping.annotations.MappingEnabled;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.ngsi.api.EntitiesApiClient;
 import org.fiware.ngsi.api.SubscriptionsApiClient;
@@ -15,7 +14,6 @@ import reactor.core.publisher.Mono;
 
 import javax.inject.Singleton;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -30,30 +28,8 @@ public class TmForumRepository extends NgsiLdBaseRepository {
 
     public <T> Mono<T> get(URI id, Class<T> entityClass) {
 
-        String idString = id.toString();
-        String[] parts = idString.split(":", 4);
-
-
-        if (parts.length < 3) {
-            log.warn("Invalid NGSI-LD ID format, expected at least 3 parts: {}", idString);
-            return Mono.empty();
-        }
-
-        String requestedType = parts[2];
-
-        // Extract entity type from MappingEnabled
-        MappingEnabled mappingAnnotation = entityClass.getAnnotation(MappingEnabled.class);
-
-        if (mappingAnnotation == null) {
-            throw new IllegalArgumentException(
-                    String.format("Class %s missing @MappingEnabled annotation", entityClass.getName()));
-        }
-
-        String[] classType = mappingAnnotation.entityType();
-
-        if (!Arrays.asList(classType).contains(requestedType)) {
-            log.warn("Entity {} has type {} but expected type was {}",
-                    id, requestedType, classType);
+        if (!IdHelper.isNgsiLdId(id.toString(), entityClass)) {
+            log.warn("Entity {} does not have the type expected for {}", id, entityClass.getName());
             return Mono.empty();
         }
 

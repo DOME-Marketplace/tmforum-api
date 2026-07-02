@@ -44,9 +44,9 @@ public class ExtendedUsageSpecificationController extends AbstractApiController<
 
     @Override
     public Mono<HttpResponse<UsageSpecificationVO>> createUsageSpecificationWithId(String id, UsageSpecificationCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, UsageSpecification.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, UsageSpecification.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         UsageSpecification usageSpecification = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

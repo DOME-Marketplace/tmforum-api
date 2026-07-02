@@ -41,9 +41,9 @@ public class ExtendedProductOfferingPriceApiController extends AbstractApiContro
 
     @Override
     public Mono<HttpResponse<ProductOfferingPriceVO>> createProductOfferingPriceWithId(String id, ProductOfferingPriceCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, ProductOfferingPrice.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, ProductOfferingPrice.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         ProductOfferingPrice productOfferingPrice = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

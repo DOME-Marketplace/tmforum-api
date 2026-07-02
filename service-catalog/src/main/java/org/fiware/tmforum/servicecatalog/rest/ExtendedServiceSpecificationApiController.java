@@ -48,9 +48,9 @@ public class ExtendedServiceSpecificationApiController extends AbstractApiContro
 
     @Override
     public Mono<HttpResponse<ServiceSpecificationVO>> createServiceSpecificationWithId(String id, ServiceSpecificationCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, ServiceSpecification.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, ServiceSpecification.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         if (createVO.getIsBundle() == null) {
