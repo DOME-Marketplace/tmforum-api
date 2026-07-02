@@ -41,9 +41,9 @@ public class ExtendedSettlementAccountApiController extends AbstractApiControlle
 
     @Override
     public Mono<HttpResponse<SettlementAccountVO>> createSettlementAccountWithId(String id, SettlementAccountCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, SettlementAccount.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, SettlementAccount.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         SettlementAccount settlementAccount = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

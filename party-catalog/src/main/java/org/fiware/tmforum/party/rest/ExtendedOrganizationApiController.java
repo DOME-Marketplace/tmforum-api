@@ -41,9 +41,9 @@ public class ExtendedOrganizationApiController extends AbstractApiController<Org
 
     @Override
     public Mono<HttpResponse<OrganizationVO>> createOrganizationWithId(String id, OrganizationCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, Organization.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Organization.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         Organization organization = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

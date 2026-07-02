@@ -44,9 +44,9 @@ public class ExtendedUsageController extends AbstractApiController<Usage>
 
     @Override
     public Mono<HttpResponse<UsageVO>> createUsageWithId(String id, UsageCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, Usage.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Usage.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         Usage usage = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

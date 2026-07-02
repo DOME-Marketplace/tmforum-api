@@ -44,9 +44,9 @@ public class ExtendedResourceFunctionApiController extends AbstractApiController
 
     @Override
     public Mono<HttpResponse<ResourceFunctionVO>> createResourceFunctionWithId(String id, ResourceFunctionCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, ResourceFunction.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, ResourceFunction.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         ResourceFunction resourceFunction = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

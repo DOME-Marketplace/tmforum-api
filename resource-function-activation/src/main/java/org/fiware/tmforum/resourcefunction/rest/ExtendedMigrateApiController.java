@@ -49,9 +49,9 @@ public class ExtendedMigrateApiController extends AbstractApiController<Migrate>
 
     @Override
     public Mono<HttpResponse<MigrateVO>> createMigrateWithId(String id, MigrateCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, Migrate.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Migrate.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         Migrate migrate = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

@@ -41,9 +41,9 @@ public class ExtendedAgreementApiController extends AbstractApiController<Agreem
 
     @Override
     public Mono<HttpResponse<AgreementVO>> createAgreementWithId(String id, AgreementCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, Agreement.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Agreement.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         Agreement agreement = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

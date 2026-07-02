@@ -41,9 +41,9 @@ public class ExtendedProductSpecificationApiController extends AbstractApiContro
 
     @Override
     public Mono<HttpResponse<ProductSpecificationVO>> createProductSpecificationWithId(String id, ProductSpecificationCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, ProductSpecification.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, ProductSpecification.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         ProductSpecification productSpecification = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

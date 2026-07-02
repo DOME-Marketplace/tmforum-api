@@ -41,9 +41,9 @@ public class ExtendedIndividualApiController extends AbstractApiController<Indiv
 
     @Override
     public Mono<HttpResponse<IndividualVO>> createIndividualWithId(String id, IndividualCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, Individual.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Individual.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         Individual individual = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

@@ -41,9 +41,9 @@ public class ExtendedProductOfferingApiController extends AbstractApiController<
 
     @Override
     public Mono<HttpResponse<ProductOfferingVO>> createProductOfferingWithId(String id, ProductOfferingCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, ProductOffering.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, ProductOffering.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         ProductOffering productOffering = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

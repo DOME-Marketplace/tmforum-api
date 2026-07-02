@@ -41,9 +41,9 @@ public class ExtendedBillingCycleSpecificationApiController extends AbstractApiC
 
     @Override
     public Mono<HttpResponse<BillingCycleSpecificationVO>> createBillingCycleSpecificationWithId(String id, BillingCycleSpecificationCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, BillingCycleSpecification.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, BillingCycleSpecification.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         BillingCycleSpecification billingCycleSpecification = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

@@ -42,9 +42,9 @@ public class ExtendedCustomerBillApiController extends AbstractApiController<Cus
 
 	@Override
 	public Mono<HttpResponse<CustomerBillVO>> createCustomerBillWithId(String id, CustomerBillCreateVO createVO) {
-		if (!IdHelper.isNgsiLdId(id)) {
+		if (!IdHelper.isNgsiLdId(id, CustomerBill.class)) {
 			throw new TmForumException(
-					String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+					String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, CustomerBill.class.getSimpleName()),
 					TmForumExceptionReason.INVALID_DATA);
 		}
 		CustomerBill customerBill = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));
