@@ -44,9 +44,9 @@ public class ExtendedResourceSpecificationApiController extends AbstractApiContr
 
     @Override
     public Mono<HttpResponse<ResourceSpecificationVO>> createResourceSpecificationWithId(String id, ResourceSpecificationCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, ResourceSpecification.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, ResourceSpecification.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         if (createVO.getName() == null) {

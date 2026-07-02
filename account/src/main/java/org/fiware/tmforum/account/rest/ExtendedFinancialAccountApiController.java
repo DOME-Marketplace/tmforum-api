@@ -41,9 +41,9 @@ public class ExtendedFinancialAccountApiController extends AbstractApiController
 
     @Override
     public Mono<HttpResponse<FinancialAccountVO>> createFinancialAccountWithId(String id, FinancialAccountCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, FinancialAccount.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, FinancialAccount.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         FinancialAccount financialAccount = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

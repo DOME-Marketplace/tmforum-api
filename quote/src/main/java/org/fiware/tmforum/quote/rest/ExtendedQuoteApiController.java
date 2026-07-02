@@ -45,9 +45,9 @@ public class ExtendedQuoteApiController extends AbstractApiController<Quote>
 
     @Override
     public Mono<HttpResponse<QuoteVO>> createQuoteWithId(String id, QuoteCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, Quote.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Quote.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         Quote quote = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));

@@ -52,9 +52,9 @@ public class ExtendedDocumentSpecificationApiController extends AbstractApiContr
     @Override
     public Mono<HttpResponse<DocumentSpecificationVO>> createDocumentSpecificationWithId(
             String id, DocumentSpecificationCreateVO createVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, DocumentSpecification.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, DocumentSpecification.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         if (createVO.getName() == null || createVO.getName().trim().isEmpty()) {

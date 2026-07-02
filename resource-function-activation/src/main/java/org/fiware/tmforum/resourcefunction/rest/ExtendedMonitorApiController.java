@@ -45,9 +45,9 @@ public class ExtendedMonitorApiController extends AbstractApiController<Monitor>
 
     @Override
     public Mono<HttpResponse<MonitorVO>> createMonitorWithId(String id, MonitorVO monitorVO) {
-        if (!IdHelper.isNgsiLdId(id)) {
+        if (!IdHelper.isNgsiLdId(id, Monitor.class)) {
             throw new TmForumException(
-                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI.", id),
+                    String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Monitor.class.getSimpleName()),
                     TmForumExceptionReason.INVALID_DATA);
         }
         Monitor monitor = tmForumMapper.map(tmForumMapper.map(monitorVO, URI.create(id)));
