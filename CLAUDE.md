@@ -89,6 +89,16 @@ Environment variables for tests: `broker` (orion-ld|scorpio), `cache` (in-memory
 
 Integration tests auto-provision a K3S cluster (Orion-LD + MongoDB). For IDE-based runs, first set up a persistent dev environment with `mvn install -Pdev`.
 
+## Out-of-Scope Modules
+
+The following modules are **out of scope** — ignore them unless explicitly asked to work on them:
+
+- `resource-order-management`
+- `service-order-management`
+- `software-management`
+
+Do not suggest changes to, include in build commands, or analyze these modules unless the user specifically asks.
+
 ## Key Conventions
 
 - All repository/controller operations are reactive — use `Mono<T>` and `Flux<T>` return types.
