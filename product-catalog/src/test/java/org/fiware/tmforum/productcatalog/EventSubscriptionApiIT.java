@@ -19,6 +19,7 @@ import org.fiware.tmforum.common.exception.ErrorDetails;
 import org.fiware.tmforum.common.test.AbstractApiIT;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -37,6 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the test currently fails for scorpio -  {@link https://github.com/ScorpioBroker/ScorpioBroker/issues/456}
  */
 @Requires(notEnv = "scorpio")
+@DisabledIfSystemProperty(named = "micronaut.environments", matches = ".*scorpio.*",
+		disabledReason = "Scorpio does not support multi-entity subscriptions (issue #456)")
 public class EventSubscriptionApiIT extends AbstractApiIT implements EventsSubscriptionApiTestSpec {
 
     private static final String ANY_CALLBACK = "https://test.com";
