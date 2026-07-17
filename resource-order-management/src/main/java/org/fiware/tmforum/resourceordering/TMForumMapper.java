@@ -34,55 +34,6 @@ public abstract class TMForumMapper extends BaseMapper {
 	@Mapping(target = "id", source = "id")
 	public abstract ResourceOrder map(ResourceOrderUpdateVO resourceOrderUpdateVO, String id);
 
-	/**
-	 * Maps a state string from the VO to the domain enum.
-	 */
-	public ResourceOrderState mapResourceOrderState(String state) {
-		if (state == null) {
-			return null;
-		}
-		for (ResourceOrderState s : ResourceOrderState.values()) {
-			if (s.getValue().equals(state)) {
-				return s;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Maps a domain state enum to a VO string.
-	 */
-	public String mapResourceOrderState(ResourceOrderState state) {
-		if (state == null) {
-			return null;
-		}
-		return state.getValue();
-	}
-
-	/**
-	 * Maps an item state string from the VO to the domain enum.
-	 */
-	public ResourceOrderItemState mapResourceOrderItemState(String state) {
-		if (state == null) {
-			return null;
-		}
-		for (ResourceOrderItemState s : ResourceOrderItemState.values()) {
-			if (s.getValue().equals(state)) {
-				return s;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Maps a domain item state enum to a VO string.
-	 */
-	public String mapResourceOrderItemState(ResourceOrderItemState state) {
-		if (state == null) {
-			return null;
-		}
-		return state.getValue();
-	}
 
 	/**
 	 * Maps an action string from the VO to the domain enum.
