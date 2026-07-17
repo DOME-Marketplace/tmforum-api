@@ -62,6 +62,9 @@ public class ServiceOrderApiController extends AbstractApiController<ServiceOrde
 				tmForumMapper.map(serviceOrderCreateVO,
 						IdHelper.toNgsiLd(UUID.randomUUID().toString(), ServiceOrder.TYPE_SERVICE_ORDER)));
 		serviceOrder.setOrderDate(clock.instant());
+		serviceOrder.setErrorMessage(new ArrayList<>());
+		serviceOrder.setJeopardyAlert(new ArrayList<>());
+		serviceOrder.setMilestone(new ArrayList<>());
 
 		return create(getCheckingMono(serviceOrder), ServiceOrder.class)
 				.map(tmForumMapper::map)

@@ -15,7 +15,7 @@ public class ResourceOrderItem extends Entity {
 	private String tmfId;
 	private Integer quantity;
 	private OrderItemAction action;
-	private ResourceOrderItemState state;
+	private String state;
 	private ReferenceValue appointment;
 	private List<ResourceOrderItemRelationship> orderItemRelationship;
 	private ResourceRefOrValueForOrder resource;

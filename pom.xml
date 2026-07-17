@@ -44,9 +44,6 @@
         <module>resource-function-activation</module>
         <module>resource-catalog</module>
         <module>resource-inventory</module>
-        <module>resource-order-management</module>
-        <module>service-order-management</module>
-        <module>software-management</module>
         <module>service-catalog</module>
         <module>customer-management</module>
         <module>customer-bill-management</module>
@@ -55,7 +52,6 @@
         <module>service-inventory</module>
         <module>party-role</module>
         <module>data-migrator</module>
-        <module>all-in-one</module>
         <module>document-management</module>
     </modules>
 
@@ -101,7 +97,7 @@
         <version.io.kokuwa.micronaut.codegen>4.4.1</version.io.kokuwa.micronaut.codegen>
 
         <!-- mapping -->
-        <version.io.github.wistefan.ngsi-ld-mapping-java>1.6.13</version.io.github.wistefan.ngsi-ld-mapping-java>
+        <version.io.github.wistefan.ngsi-ld-mapping-java>1.6.16</version.io.github.wistefan.ngsi-ld-mapping-java>
 
         <!-- caching -->
         <version.io.micronaut.redis.micronaut-redis-lettuce>5.4.0</version.io.micronaut.redis.micronaut-redis-lettuce>
@@ -1051,6 +1047,21 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>all-in-one</id>
+            <modules>
+                <module>all-in-one</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>optional-modules</id>
+            <modules>
+                <module>resource-order-management</module>
+                <module>service-order-management</module>
+                <module>software-management</module>
+                <module>all-in-one</module>
+            </modules>
         </profile>
     </profiles>
 </project>
