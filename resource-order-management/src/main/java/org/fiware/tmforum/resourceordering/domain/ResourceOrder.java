@@ -111,7 +111,7 @@ public class ResourceOrder extends EntityWithId {
 
 	@Getter(onMethod = @__({ @AttributeGetter(value = AttributeType.PROPERTY, targetName = "state") }))
 	@Setter(onMethod = @__({ @AttributeSetter(value = AttributeType.PROPERTY, targetName = "state") }))
-	private ResourceOrderState state;
+	private String state;
 
 	public ResourceOrder(String id) {
 		super(TYPE_RESOURCE_ORDER, id);
@@ -119,6 +119,6 @@ public class ResourceOrder extends EntityWithId {
 
 	@Override
 	public String getEntityState() {
-		return state != null ? state.getValue() : null;
+		return state;
 	}
 }
