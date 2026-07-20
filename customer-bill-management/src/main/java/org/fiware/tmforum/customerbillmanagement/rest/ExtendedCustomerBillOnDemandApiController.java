@@ -29,6 +29,9 @@ import java.net.URI;
 public class ExtendedCustomerBillOnDemandApiController extends AbstractApiController<CustomerBillOnDemand>
         implements CustomerBillOnDemandExtensionApi {
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     @Value("${apiExtension.deleteEnabled:false}")
     private boolean deleteEnabled;
 
@@ -49,6 +52,9 @@ public class ExtendedCustomerBillOnDemandApiController extends AbstractApiContro
 
     @Override
     public Mono<HttpResponse<CustomerBillOnDemandVO>> createCustomerBillOnDemandWithId(String id, CustomerBillOnDemandCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, CustomerBillOnDemand.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, CustomerBillOnDemand.class.getSimpleName()),

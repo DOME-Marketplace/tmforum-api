@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @MicronautTest(packages = {"org.fiware.tmforum.partyRole"})
 @Property(name = "apiExtension.enabled", value = "true")
+@Property(name = "apiExtension.putEnabled", value = "true")
 public class ExtendedPartyRoleApiIT extends AbstractApiIT implements PartyRoleExtensionApiTestSpec {
 
     private final PartyRoleExtensionApiTestClient testClient;

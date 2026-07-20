@@ -1,7 +1,9 @@
 package org.fiware.tmforum.account.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.account.api.ext.SettlementAccountExtensionApi;
@@ -30,6 +32,9 @@ public class ExtendedSettlementAccountApiController extends AbstractApiControlle
     private final TMForumMapper tmForumMapper;
     private final SettlementAccountApiController settlementAccountApiController;
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     public ExtendedSettlementAccountApiController(QueryParser queryParser, ReferenceValidationService validationService,
                                                   TmForumRepository repository, TMForumEventHandler eventHandler,
                                                   TMForumMapper tmForumMapper,
@@ -41,6 +46,9 @@ public class ExtendedSettlementAccountApiController extends AbstractApiControlle
 
     @Override
     public Mono<HttpResponse<SettlementAccountVO>> createSettlementAccountWithId(String id, SettlementAccountCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, SettlementAccount.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, SettlementAccount.class.getSimpleName()),

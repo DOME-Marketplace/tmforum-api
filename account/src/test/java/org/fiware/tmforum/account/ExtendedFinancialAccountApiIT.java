@@ -33,6 +33,7 @@ import static org.mockito.Mockito.when;
 
 @MicronautTest(packages = {"org.fiware.tmforum.account"})
 @Property(name = "apiExtension.enabled", value = "true")
+@Property(name = "apiExtension.putEnabled", value = "true")
 public class ExtendedFinancialAccountApiIT extends AbstractApiIT implements FinancialAccountExtensionApiTestSpec {
 
     private final FinancialAccountExtensionApiTestClient testClient;

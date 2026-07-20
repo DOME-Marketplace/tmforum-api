@@ -1,7 +1,9 @@
 package org.fiware.tmforum.account.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.account.api.ext.BillingAccountExtensionApi;
@@ -30,6 +32,9 @@ public class ExtendedBillingAccountApiController extends AbstractApiController<B
     private final TMForumMapper tmForumMapper;
     private final BillingAccountApiController billingAccountApiController;
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     public ExtendedBillingAccountApiController(QueryParser queryParser, ReferenceValidationService validationService,
                                                TmForumRepository repository, TMForumEventHandler eventHandler,
                                                TMForumMapper tmForumMapper,
@@ -41,6 +46,9 @@ public class ExtendedBillingAccountApiController extends AbstractApiController<B
 
     @Override
     public Mono<HttpResponse<BillingAccountVO>> createBillingAccountWithId(String id, BillingAccountCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, BillingAccount.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, BillingAccount.class.getSimpleName()),

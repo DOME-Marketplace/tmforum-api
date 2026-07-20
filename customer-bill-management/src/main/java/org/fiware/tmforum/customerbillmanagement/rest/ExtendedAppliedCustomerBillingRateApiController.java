@@ -1,7 +1,9 @@
 package org.fiware.tmforum.customerbillmanagement.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.customerbillmanagement.api.AppliedCustomerBillingRateApi;
@@ -34,6 +36,9 @@ import java.util.UUID;
 @Requires(property = "apiExtension.enabled", value = "true")
 public class ExtendedAppliedCustomerBillingRateApiController extends AbstractApiController<AppliedCustomerBillingRate> implements AppliedCustomerBillingRateExtensionApi {
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     private final TMForumMapper tmForumMapper;
     private final Clock clock;
 
@@ -48,6 +53,9 @@ public class ExtendedAppliedCustomerBillingRateApiController extends AbstractApi
 
     @Override
     public Mono<HttpResponse<AppliedCustomerBillingRateVO>> createAppliedCustomerBillingRateWithId(String id, AppliedCustomerBillingRateCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, AppliedCustomerBillingRate.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, AppliedCustomerBillingRate.class.getSimpleName()),

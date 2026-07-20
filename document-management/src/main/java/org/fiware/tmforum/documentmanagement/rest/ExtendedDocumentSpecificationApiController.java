@@ -1,7 +1,9 @@
 package org.fiware.tmforum.documentmanagement.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.document.api.ext.DocumentSpecificationExtensionApi;
@@ -34,6 +36,9 @@ public class ExtendedDocumentSpecificationApiController extends AbstractApiContr
     private final S3AttachmentService s3AttachmentService;
     private final DocumentSpecificationApiController documentSpecificationApiController;
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     public ExtendedDocumentSpecificationApiController(QueryParser queryParser,
                                                       ReferenceValidationService validationService,
                                                       TmForumRepository repository,
@@ -52,6 +57,9 @@ public class ExtendedDocumentSpecificationApiController extends AbstractApiContr
     @Override
     public Mono<HttpResponse<DocumentSpecificationVO>> createDocumentSpecificationWithId(
             String id, DocumentSpecificationCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, DocumentSpecification.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, DocumentSpecification.class.getSimpleName()),

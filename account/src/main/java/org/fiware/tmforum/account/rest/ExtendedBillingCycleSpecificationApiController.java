@@ -1,7 +1,9 @@
 package org.fiware.tmforum.account.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.account.api.ext.BillingCycleSpecificationExtensionApi;
@@ -30,6 +32,9 @@ public class ExtendedBillingCycleSpecificationApiController extends AbstractApiC
     private final TMForumMapper tmForumMapper;
     private final BillingCycleSpecificationApiController billingCycleSpecificationApiController;
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     public ExtendedBillingCycleSpecificationApiController(QueryParser queryParser, ReferenceValidationService validationService,
                                                           TmForumRepository repository, TMForumEventHandler eventHandler,
                                                           TMForumMapper tmForumMapper,
@@ -41,6 +46,9 @@ public class ExtendedBillingCycleSpecificationApiController extends AbstractApiC
 
     @Override
     public Mono<HttpResponse<BillingCycleSpecificationVO>> createBillingCycleSpecificationWithId(String id, BillingCycleSpecificationCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, BillingCycleSpecification.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, BillingCycleSpecification.class.getSimpleName()),

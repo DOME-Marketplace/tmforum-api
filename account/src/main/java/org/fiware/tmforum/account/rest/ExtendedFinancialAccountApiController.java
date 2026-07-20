@@ -1,7 +1,9 @@
 package org.fiware.tmforum.account.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.account.api.ext.FinancialAccountExtensionApi;
@@ -30,6 +32,9 @@ public class ExtendedFinancialAccountApiController extends AbstractApiController
     private final TMForumMapper tmForumMapper;
     private final FinancialAccountApiController financialAccountApiController;
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     public ExtendedFinancialAccountApiController(QueryParser queryParser, ReferenceValidationService validationService,
                                                  TmForumRepository repository, TMForumEventHandler eventHandler,
                                                  TMForumMapper tmForumMapper,
@@ -41,6 +46,9 @@ public class ExtendedFinancialAccountApiController extends AbstractApiController
 
     @Override
     public Mono<HttpResponse<FinancialAccountVO>> createFinancialAccountWithId(String id, FinancialAccountCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, FinancialAccount.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, FinancialAccount.class.getSimpleName()),
