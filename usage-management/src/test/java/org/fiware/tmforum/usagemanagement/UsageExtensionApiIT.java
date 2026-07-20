@@ -33,6 +33,7 @@ import static org.mockito.Mockito.when;
 
 @MicronautTest(packages = {"org.fiware.tmforum.usagemanagement"})
 @Property(name = "apiExtension.enabled", value = "true")
+@Property(name = "apiExtension.putEnabled", value = "true")
 public class UsageExtensionApiIT extends AbstractApiIT implements UsageExtensionApiTestSpec {
 
     private final UsageExtensionApiTestClient testClient;

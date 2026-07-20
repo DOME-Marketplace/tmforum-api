@@ -30,6 +30,9 @@ import java.util.List;
 public class ExtendedCancelProductOrderApiController extends AbstractApiController<CancelProductOrder>
         implements CancelProductOrderExtensionApi {
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     @Value("${apiExtension.deleteEnabled:false}")
     private boolean deleteEnabled;
 
@@ -47,6 +50,9 @@ public class ExtendedCancelProductOrderApiController extends AbstractApiControll
 
     @Override
     public Mono<HttpResponse<CancelProductOrderVO>> createCancelProductOrderWithId(String id, CancelProductOrderCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, CancelProductOrder.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, CancelProductOrder.class.getSimpleName()),

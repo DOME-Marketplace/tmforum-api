@@ -1,7 +1,9 @@
 package org.fiware.tmforum.productinventory.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.productinventory.api.ext.ProductExtensionApi;
@@ -27,6 +29,9 @@ import java.net.URI;
 public class ExtendedProductApiController extends AbstractApiController<Product>
         implements ProductExtensionApi {
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     private final TMForumMapper tmForumMapper;
     private final ProductApiController productApiController;
 
@@ -41,6 +46,9 @@ public class ExtendedProductApiController extends AbstractApiController<Product>
 
     @Override
     public Mono<HttpResponse<ProductVO>> createProductWithId(String id, ProductCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, Product.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Product.class.getSimpleName()),

@@ -1,7 +1,9 @@
 package org.fiware.tmforum.servicecatalog.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.servicecatalog.api.ext.ServiceCategoryExtensionApi;
@@ -32,6 +34,9 @@ public class ExtendedServiceCategoryApiController extends AbstractApiController<
     private final Clock clock;
     private final ServiceCategoryApiController serviceCategoryApiController;
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     public ExtendedServiceCategoryApiController(
             QueryParser queryParser,
             ReferenceValidationService validationService,
@@ -48,6 +53,9 @@ public class ExtendedServiceCategoryApiController extends AbstractApiController<
 
     @Override
     public Mono<HttpResponse<ServiceCategoryVO>> createServiceCategoryWithId(String id, ServiceCategoryCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, ServiceCategory.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, ServiceCategory.class.getSimpleName()),

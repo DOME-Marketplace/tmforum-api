@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 
 @MicronautTest(packages = {"org.fiware.tmforum.account"})
 @Property(name = "apiExtension.enabled", value = "true")
+@Property(name = "apiExtension.putEnabled", value = "true")
 public class ExtendedSettlementAccountApiIT extends AbstractApiIT implements SettlementAccountExtensionApiTestSpec {
 
     private final SettlementAccountExtensionApiTestClient testClient;

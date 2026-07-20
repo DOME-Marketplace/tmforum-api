@@ -1,7 +1,9 @@
 package org.fiware.tmforum.resourcefunction.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.resourcefunction.api.ext.ResourceFunctionExtensionApi;
@@ -27,6 +29,9 @@ import java.net.URI;
 public class ExtendedResourceFunctionApiController extends AbstractApiController<ResourceFunction>
         implements ResourceFunctionExtensionApi {
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     private final TMForumMapper tmForumMapper;
     private final ResourceFunctionApiController resourceFunctionApiController;
 
@@ -44,6 +49,9 @@ public class ExtendedResourceFunctionApiController extends AbstractApiController
 
     @Override
     public Mono<HttpResponse<ResourceFunctionVO>> createResourceFunctionWithId(String id, ResourceFunctionCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, ResourceFunction.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, ResourceFunction.class.getSimpleName()),

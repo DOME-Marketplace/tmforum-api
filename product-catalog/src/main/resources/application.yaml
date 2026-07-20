@@ -40,6 +40,7 @@ general:
 
 apiExtension:
   enabled: ${API_EXTENSION_ENABLED:false}
+  putEnabled: ${API_EXTENSION_PUT_ENABLED:false}
 api:
   product-catalog:
     basepath: ${general.basepath:/}

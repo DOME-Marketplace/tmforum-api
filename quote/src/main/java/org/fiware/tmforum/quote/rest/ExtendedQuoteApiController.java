@@ -1,7 +1,9 @@
 package org.fiware.tmforum.quote.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.quote.api.ext.QuoteExtensionApi;
@@ -33,6 +35,9 @@ public class ExtendedQuoteApiController extends AbstractApiController<Quote>
     private final Clock clock;
     private final QuoteApiController quoteApiController;
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     public ExtendedQuoteApiController(QueryParser queryParser, ReferenceValidationService validationService,
                                       TmForumRepository repository, TMForumEventHandler eventHandler,
                                       TMForumMapper tmForumMapper, Clock clock,
@@ -45,6 +50,9 @@ public class ExtendedQuoteApiController extends AbstractApiController<Quote>
 
     @Override
     public Mono<HttpResponse<QuoteVO>> createQuoteWithId(String id, QuoteCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, Quote.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Quote.class.getSimpleName()),
