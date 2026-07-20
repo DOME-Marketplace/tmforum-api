@@ -1,7 +1,9 @@
 package org.fiware.tmforum.partyrole.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.partyRole.api.ext.PartyRoleExtensionApi;
@@ -30,6 +32,9 @@ public class ExtendedPartyRoleController extends AbstractApiController<PartyRole
     private final TMForumMapper tmForumMapper;
     private final PartyRoleController partyRoleController;
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     public ExtendedPartyRoleController(QueryParser queryParser, ReferenceValidationService validationService,
                                        TmForumRepository repository, TMForumEventHandler eventHandler,
                                        TMForumMapper tmForumMapper,
@@ -41,6 +46,9 @@ public class ExtendedPartyRoleController extends AbstractApiController<PartyRole
 
     @Override
     public Mono<HttpResponse<PartyRoleVO>> createPartyRoleWithId(String id, PartyRoleCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, PartyRole.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, PartyRole.class.getSimpleName()),

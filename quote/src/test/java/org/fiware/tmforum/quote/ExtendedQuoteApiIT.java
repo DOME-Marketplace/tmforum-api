@@ -37,6 +37,7 @@ import static org.mockito.Mockito.when;
 
 @MicronautTest(packages = {"org.fiware.tmforum.quote"})
 @Property(name = "apiExtension.enabled", value = "true")
+@Property(name = "apiExtension.putEnabled", value = "true")
 public class ExtendedQuoteApiIT extends AbstractApiIT implements QuoteExtensionApiTestSpec {
 
     private final QuoteExtensionApiTestClient testClient;

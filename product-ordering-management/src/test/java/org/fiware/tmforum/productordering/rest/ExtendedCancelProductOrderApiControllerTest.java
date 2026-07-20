@@ -2,11 +2,16 @@ package org.fiware.tmforum.productordering.rest;
 
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
+import org.fiware.productordering.model.CancelProductOrderCreateVO;
+import org.fiware.productordering.model.CancelProductOrderVO;
+import org.fiware.productordering.model.ProductOrderRefVO;
 import org.fiware.tmforum.common.notification.TMForumEventHandler;
 import org.fiware.tmforum.common.querying.QueryParser;
 import org.fiware.tmforum.common.repository.TmForumRepository;
 import org.fiware.tmforum.common.validation.ReferenceValidationService;
 import org.fiware.tmforum.productordering.TMForumMapper;
+import org.fiware.tmforum.productordering.domain.CancelProductOrder;
+import org.fiware.tmforum.productordering.domain.ProductOrderRef;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -21,7 +26,7 @@ import static org.mockito.Mockito.when;
 
 class ExtendedCancelProductOrderApiControllerTest {
 
-    private static final String VALID_ID = "urn:ngsi-ld:cancelproductorder:test-id";
+    private static final String VALID_ID = "urn:ngsi-ld:cancel-product-order:test-id";
 
     @Mock private QueryParser queryParser;
     @Mock private ReferenceValidationService validationService;
@@ -41,6 +46,48 @@ class ExtendedCancelProductOrderApiControllerTest {
         Field field = ExtendedCancelProductOrderApiController.class.getDeclaredField("deleteEnabled");
         field.setAccessible(true);
         field.set(controller, value);
+    }
+
+    private void setPutEnabled(boolean value) throws Exception {
+        Field field = ExtendedCancelProductOrderApiController.class.getDeclaredField("putEnabled");
+        field.setAccessible(true);
+        field.set(controller, value);
+    }
+
+    @Test
+    void createCancelProductOrderWithId_whenPutDisabled_returns405() throws Exception {
+        setPutEnabled(false);
+
+        HttpResponse<CancelProductOrderVO> response =
+                controller.createCancelProductOrderWithId(VALID_ID, new CancelProductOrderCreateVO()).block();
+
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED, response.getStatus());
+    }
+
+    @Test
+    void createCancelProductOrderWithId_whenPutEnabled_returns201() throws Exception {
+        setPutEnabled(true);
+
+        CancelProductOrder mappedCancelProductOrder = new CancelProductOrder(VALID_ID);
+        mappedCancelProductOrder.setProductOrder(new ProductOrderRef("urn:ngsi-ld:product-order:test-id"));
+        CancelProductOrderVO intermediateVO = new CancelProductOrderVO();
+        CancelProductOrderVO responseVO = new CancelProductOrderVO();
+
+        CancelProductOrderCreateVO createVO = new CancelProductOrderCreateVO()
+                .productOrder(new ProductOrderRefVO().id("urn:ngsi-ld:product-order:test-id"));
+
+        when(tmForumMapper.map(any(CancelProductOrderCreateVO.class), any())).thenReturn(intermediateVO);
+        when(tmForumMapper.map(any(CancelProductOrderVO.class))).thenReturn(mappedCancelProductOrder);
+        when(tmForumMapper.map(any(CancelProductOrder.class))).thenReturn(responseVO);
+        when(validationService.getCheckingMono(any(), any())).thenReturn(Mono.just(mappedCancelProductOrder));
+        when(repository.createDomainEntity(any())).thenReturn(Mono.empty());
+        when(eventHandler.handleCreateEvent(any())).thenReturn(Mono.empty());
+
+        HttpResponse<CancelProductOrderVO> response =
+                controller.createCancelProductOrderWithId(VALID_ID, createVO).block();
+
+        assertEquals(HttpStatus.CREATED, response.getStatus());
+        assertEquals(responseVO, response.body());
     }
 
     @Test

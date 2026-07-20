@@ -1,7 +1,9 @@
 package org.fiware.tmforum.customerbillmanagement.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.customerbillmanagement.api.ext.CustomerBillExtensionApi;
@@ -28,6 +30,9 @@ import java.util.UUID;
 @Requires(property = "apiExtension.enabled", value = "true")
 public class ExtendedCustomerBillApiController extends AbstractApiController<CustomerBill> implements CustomerBillExtensionApi {
 
+	@Value("${apiExtension.putEnabled:false}")
+	private boolean putEnabled;
+
 	private final TMForumMapper tmForumMapper;
 	private final Clock clock;
 
@@ -42,6 +47,9 @@ public class ExtendedCustomerBillApiController extends AbstractApiController<Cus
 
 	@Override
 	public Mono<HttpResponse<CustomerBillVO>> createCustomerBillWithId(String id, CustomerBillCreateVO createVO) {
+		if (!putEnabled) {
+			return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+		}
 		if (!IdHelper.isNgsiLdId(id, CustomerBill.class)) {
 			throw new TmForumException(
 					String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, CustomerBill.class.getSimpleName()),

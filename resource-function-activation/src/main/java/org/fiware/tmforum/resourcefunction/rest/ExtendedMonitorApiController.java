@@ -28,6 +28,9 @@ import java.net.URI;
 public class ExtendedMonitorApiController extends AbstractApiController<Monitor>
         implements MonitorExtensionApi {
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     @Value("${apiExtension.deleteEnabled:false}")
     private boolean deleteEnabled;
 
@@ -45,6 +48,9 @@ public class ExtendedMonitorApiController extends AbstractApiController<Monitor>
 
     @Override
     public Mono<HttpResponse<MonitorVO>> createMonitorWithId(String id, MonitorVO monitorVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, Monitor.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Monitor.class.getSimpleName()),

@@ -29,6 +29,9 @@ import java.net.URI;
 public class ExtendedHealApiController extends AbstractApiController<Heal>
         implements HealExtensionApi {
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     @Value("${apiExtension.deleteEnabled:false}")
     private boolean deleteEnabled;
 
@@ -49,6 +52,9 @@ public class ExtendedHealApiController extends AbstractApiController<Heal>
 
     @Override
     public Mono<HttpResponse<HealVO>> createHealWithId(String id, HealCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, Heal.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Heal.class.getSimpleName()),

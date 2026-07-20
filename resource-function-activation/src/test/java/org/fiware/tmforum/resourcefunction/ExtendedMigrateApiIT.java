@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 
 @MicronautTest(packages = {"org.fiware.tmforum.resourcefunction"})
 @Property(name = "apiExtension.enabled", value = "true")
+@Property(name = "apiExtension.putEnabled", value = "true")
 @Property(name = "apiExtension.deleteEnabled", value = "true")
 public class ExtendedMigrateApiIT extends AbstractApiIT implements MigrateExtensionApiTestSpec {
 
