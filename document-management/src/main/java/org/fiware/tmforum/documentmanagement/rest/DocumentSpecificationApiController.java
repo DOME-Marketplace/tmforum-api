@@ -137,6 +137,8 @@ public class DocumentSpecificationApiController extends AbstractApiController<Do
     protected Mono<DocumentSpecification> getCheckingMono(DocumentSpecification docSpec) {
         List<List<? extends ReferencedEntity>> references = new ArrayList<>();
         references.add(docSpec.getRelatedParty());
+        references.add(docSpec.getConstraint());
+        references.add(docSpec.getEntitySpecRelationship());
 
         return getCheckingMono(docSpec, references)
                 .onErrorMap(throwable -> new TmForumException(
