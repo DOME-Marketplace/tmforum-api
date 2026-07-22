@@ -35,6 +35,7 @@ import static org.mockito.Mockito.when;
 
 @MicronautTest(packages = {"org.fiware.tmforum.servicecatalog"})
 @Property(name = "apiExtension.enabled", value = "true")
+@Property(name = "apiExtension.putEnabled", value = "true")
 public class ServiceCategoryExtensionApiIT extends AbstractApiIT implements ServiceCategoryExtensionApiTestSpec {
 
     private final ServiceCategoryExtensionApiTestClient testClient;

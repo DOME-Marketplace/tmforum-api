@@ -1,7 +1,9 @@
 package org.fiware.tmforum.productordering.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.productordering.api.ext.ProductOrderExtensionApi;
@@ -28,6 +30,9 @@ import java.time.Clock;
 public class ExtendedProductOrderApiController extends AbstractApiController<ProductOrder>
         implements ProductOrderExtensionApi {
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     private final TMForumMapper tmForumMapper;
     private final Clock clock;
     private final ProductOrderingApiController productOrderingApiController;
@@ -44,6 +49,9 @@ public class ExtendedProductOrderApiController extends AbstractApiController<Pro
 
     @Override
     public Mono<HttpResponse<ProductOrderVO>> createProductOrderWithId(String id, ProductOrderCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, ProductOrder.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, ProductOrder.class.getSimpleName()),

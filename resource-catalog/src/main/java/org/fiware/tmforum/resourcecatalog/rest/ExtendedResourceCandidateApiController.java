@@ -1,7 +1,9 @@
 package org.fiware.tmforum.resourcecatalog.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.resourcecatalog.api.ext.ResourceCandidateExtensionApi;
@@ -32,6 +34,9 @@ public class ExtendedResourceCandidateApiController extends AbstractApiControlle
     private final Clock clock;
     private final ResourceCandidateApiController resourceCandidateApiController;
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     public ExtendedResourceCandidateApiController(QueryParser queryParser, ReferenceValidationService validationService,
                                                   TmForumRepository repository, TMForumEventHandler eventHandler,
                                                   TMForumMapper tmForumMapper, Clock clock,
@@ -44,6 +49,9 @@ public class ExtendedResourceCandidateApiController extends AbstractApiControlle
 
     @Override
     public Mono<HttpResponse<ResourceCandidateVO>> createResourceCandidateWithId(String id, ResourceCandidateCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, ResourceCandidate.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, ResourceCandidate.class.getSimpleName()),

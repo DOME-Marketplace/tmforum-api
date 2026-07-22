@@ -33,6 +33,7 @@ import static org.mockito.Mockito.when;
 
 @MicronautTest(packages = {"org.fiware.tmforum.agreement"})
 @Property(name = "apiExtension.enabled", value = "true")
+@Property(name = "apiExtension.putEnabled", value = "true")
 public class ExtendedAgreementSpecificationApiIT extends AbstractApiIT implements AgreementSpecificationExtensionApiTestSpec {
 
     private final AgreementSpecificationExtensionApiTestClient testClient;

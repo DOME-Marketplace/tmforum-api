@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 
 @MicronautTest(packages = {"org.fiware.tmforum.resourcecatalog"})
 @Property(name = "apiExtension.enabled", value = "true")
+@Property(name = "apiExtension.putEnabled", value = "true")
 public class ExtendedResourceSpecificationApiIT extends AbstractApiIT implements ResourceSpecificationExtensionApiTestSpec {
 
     private final ResourceSpecificationExtensionApiTestClient testClient;

@@ -2,11 +2,13 @@ package org.fiware.tmforum.resourcefunction.rest;
 
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
+import org.fiware.resourcefunction.model.MonitorVO;
 import org.fiware.tmforum.common.notification.TMForumEventHandler;
 import org.fiware.tmforum.common.querying.QueryParser;
 import org.fiware.tmforum.common.repository.TmForumRepository;
 import org.fiware.tmforum.common.validation.ReferenceValidationService;
 import org.fiware.tmforum.resourcefunction.TMForumMapper;
+import org.fiware.tmforum.resourcefunction.domain.Monitor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -41,6 +43,42 @@ class ExtendedMonitorApiControllerTest {
         Field field = ExtendedMonitorApiController.class.getDeclaredField("deleteEnabled");
         field.setAccessible(true);
         field.set(controller, value);
+    }
+
+    private void setPutEnabled(boolean value) throws Exception {
+        Field field = ExtendedMonitorApiController.class.getDeclaredField("putEnabled");
+        field.setAccessible(true);
+        field.set(controller, value);
+    }
+
+    @Test
+    void createMonitorWithId_whenPutDisabled_returns405() throws Exception {
+        setPutEnabled(false);
+
+        HttpResponse<MonitorVO> response = controller.createMonitorWithId(VALID_ID, new MonitorVO()).block();
+
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED, response.getStatus());
+    }
+
+    @Test
+    void createMonitorWithId_whenPutEnabled_returns201() throws Exception {
+        setPutEnabled(true);
+
+        Monitor mappedMonitor = new Monitor(VALID_ID);
+        MonitorVO intermediateVO = new MonitorVO();
+        MonitorVO responseVO = new MonitorVO();
+
+        MonitorVO createVO = new MonitorVO();
+        when(tmForumMapper.map(any(MonitorVO.class), any())).thenReturn(intermediateVO);
+        when(tmForumMapper.map(any(MonitorVO.class))).thenReturn(mappedMonitor);
+        when(tmForumMapper.map(any(Monitor.class))).thenReturn(responseVO);
+        when(repository.createDomainEntity(any())).thenReturn(Mono.empty());
+        when(eventHandler.handleCreateEvent(any())).thenReturn(Mono.empty());
+
+        HttpResponse<MonitorVO> response = controller.createMonitorWithId(VALID_ID, createVO).block();
+
+        assertEquals(HttpStatus.CREATED, response.getStatus());
+        assertEquals(responseVO, response.body());
     }
 
     @Test

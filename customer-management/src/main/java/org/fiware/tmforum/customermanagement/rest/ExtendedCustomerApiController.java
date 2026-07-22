@@ -1,7 +1,9 @@
 package org.fiware.tmforum.customermanagement.rest;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.customermanagement.api.ext.CustomerExtensionApi;
@@ -30,6 +32,9 @@ public class ExtendedCustomerApiController extends AbstractApiController<Custome
     private final TMForumMapper tmForumMapper;
     private final CustomerApiController customerApiController;
 
+    @Value("${apiExtension.putEnabled:false}")
+    private boolean putEnabled;
+
     public ExtendedCustomerApiController(QueryParser queryParser, ReferenceValidationService validationService,
                                          TmForumRepository repository, TMForumEventHandler eventHandler,
                                          TMForumMapper tmForumMapper,
@@ -41,6 +46,9 @@ public class ExtendedCustomerApiController extends AbstractApiController<Custome
 
     @Override
     public Mono<HttpResponse<CustomerVO>> createCustomerWithId(String id, CustomerCreateVO createVO) {
+        if (!putEnabled) {
+            return Mono.just(HttpResponse.status(HttpStatus.METHOD_NOT_ALLOWED));
+        }
         if (!IdHelper.isNgsiLdId(id, Customer.class)) {
             throw new TmForumException(
                     String.format("Did not receive a valid id %s, the id has to be a valid NGSI-LD URI of type %s.", id, Customer.class.getSimpleName()),

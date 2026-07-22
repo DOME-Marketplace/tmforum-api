@@ -35,6 +35,7 @@ import static org.mockito.Mockito.when;
 
 @MicronautTest(packages = {"org.fiware.tmforum.customerbillmanagement"})
 @Property(name = "apiExtension.enabled", value = "true")
+@Property(name = "apiExtension.putEnabled", value = "true")
 @Property(name = "apiExtension.deleteEnabled", value = "true")
 public class ExtendedCustomerBillOnDemandApiIT extends AbstractApiIT
         implements CustomerBillOnDemandExtensionApiTestSpec {
