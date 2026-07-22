@@ -1,45 +1,65 @@
 package org.fiware.tmforum.common.mapping;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyName;
 import com.fasterxml.jackson.databind.deser.std.DelegatingDeserializer;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
-import com.networknt.schema.*;
+import com.networknt.schema.InputFormat;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SchemaLocation;
+import com.networknt.schema.SchemaValidatorsConfig;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 import com.networknt.schema.resource.ClasspathSchemaLoader;
-import com.networknt.schema.resource.SchemaMapper;
 import com.networknt.schema.resource.UriSchemaLoader;
-import io.micronaut.context.ApplicationContext;
-import io.micronaut.http.context.ServerRequestContext;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.tmforum.common.exception.SchemaValidationException;
 
-import javax.validation.ValidationException;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Deserializer, that validates incoming objects against the linked(atSchemaLocation) json-schema.
+ * Deserializer that validates incoming objects against the linked ({@code @schemaLocation}) JSON Schema.
+ *
+ * <p>For known sub-types (registered via {@link SubTypePropertyProvider}), sub-type-specific properties
+ * are recognized and allowed without requiring an explicit {@code @schemaLocation}. Only truly unknown
+ * properties (those not belonging to any recognized sub-type) are validated against the schema or
+ * rejected if no schema is provided.</p>
  */
 @Slf4j
 public class ValidatingDeserializer extends DelegatingDeserializer {
+
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 	private final BeanDescription beanDescription;
+	private final List<SubTypePropertyProvider> subTypePropertyProviders;
 
-	public ValidatingDeserializer(JsonDeserializer<?> d, BeanDescription beanDescription) {
-		super(d);
+	/**
+	 * Create a new ValidatingDeserializer.
+	 *
+	 * @param delegate                  the delegate deserializer
+	 * @param beanDescription           the bean description for the target type
+	 * @param subTypePropertyProviders  the registered sub-type property providers
+	 */
+	public ValidatingDeserializer(JsonDeserializer<?> delegate, BeanDescription beanDescription,
+			List<SubTypePropertyProvider> subTypePropertyProviders) {
+		super(delegate);
 		this.beanDescription = beanDescription;
+		this.subTypePropertyProviders = subTypePropertyProviders != null
+				? subTypePropertyProviders : List.of();
 	}
 
 	@Override
 	protected JsonDeserializer<?> newDelegatingInstance(JsonDeserializer<?> newDelegatee) {
-		return new ValidatingDeserializer(newDelegatee, beanDescription);
+		return new ValidatingDeserializer(newDelegatee, beanDescription, subTypePropertyProviders);
 	}
 
 	@Override
@@ -52,14 +72,68 @@ public class ValidatingDeserializer extends DelegatingDeserializer {
 		TokenBuffer tokenBuffer = ctxt.bufferAsCopyOfValue(p);
 		Object targetObject = super.deserialize(tokenBuffer.asParserOnFirstToken(), ctxt);
 		if (targetObject instanceof UnknownPreservingBase upb) {
-			if (upb.getAtSchemaLocation() != null) {
-				String unknownPropsJson = OBJECT_MAPPER.writeValueAsString(upb.getUnknownProperties());
-				validateWithSchema(upb.getAtSchemaLocation(), unknownPropsJson);
-			} else if (upb.getUnknownProperties() != null && !upb.getUnknownProperties().isEmpty()) {
-				throw new SchemaValidationException(List.of(), "If no schema is provided, no additional properties are allowed.");
+			Map<String, Object> unknownProperties = upb.getUnknownProperties();
+			if (unknownProperties != null && !unknownProperties.isEmpty()) {
+				// Resolve @type: prefer the dedicated getter, fall back to unknownProperties
+				// (some generated UpdateVOs lack an explicit @type field, so it ends up here)
+				String atType = upb.getAtType();
+				if (atType == null && unknownProperties.get("@type") instanceof String s) {
+					atType = s;
+				}
+
+				Map<String, Object> trulyUnknown = filterKnownSubTypeProperties(
+						unknownProperties, atType);
+				// @type is a standard TMForum polymorphism discriminator, not a custom extension
+				trulyUnknown.remove("@type");
+
+				if (upb.getAtSchemaLocation() != null) {
+					// validate only truly unknown properties against the schema
+					if (!trulyUnknown.isEmpty()) {
+						String unknownPropsJson = OBJECT_MAPPER.writeValueAsString(trulyUnknown);
+						validateWithSchema(upb.getAtSchemaLocation(), unknownPropsJson);
+					}
+				} else if (!trulyUnknown.isEmpty()) {
+					throw new SchemaValidationException(
+							List.of("Additional properties not allowed: " + trulyUnknown.keySet()),
+							"No additional properties are allowed without a @schemaLocation.");
+				}
 			}
 		}
 		return targetObject;
+	}
+
+	/**
+	 * Filter out properties that are known to belong to a recognized sub-type.
+	 * Returns only the truly unknown properties that require schema validation.
+	 *
+	 * @param unknownProperties the unknown properties from the parent VO
+	 * @param atType            the {@code @type} value from the payload, may be null
+	 * @return the subset of properties that are not recognized as sub-type fields
+	 */
+	private Map<String, Object> filterKnownSubTypeProperties(Map<String, Object> unknownProperties,
+			String atType) {
+		if (atType == null || subTypePropertyProviders.isEmpty()) {
+			return unknownProperties;
+		}
+
+		Set<String> knownProperties = subTypePropertyProviders.stream()
+				.map(provider -> provider.getKnownProperties(atType))
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.flatMap(Set::stream)
+				.collect(Collectors.toSet());
+
+		if (knownProperties.isEmpty()) {
+			return unknownProperties;
+		}
+
+		Map<String, Object> trulyUnknown = new HashMap<>();
+		unknownProperties.forEach((key, value) -> {
+			if (!knownProperties.contains(key)) {
+				trulyUnknown.put(key, value);
+			}
+		});
+		return trulyUnknown;
 	}
 
 	private void validateWithSchema(Object theSchema, String jsonString) {
@@ -93,12 +167,11 @@ public class ValidatingDeserializer extends DelegatingDeserializer {
 				throw new SchemaValidationException(assertions.stream().map(ValidationMessage::getMessage).toList(), "Input is not valid for the given schema.");
 			}
 		} catch (Exception e) {
-			if(e instanceof SchemaValidationException) {
+			if (e instanceof SchemaValidationException) {
 				throw e;
 			}
 			throw new SchemaValidationException(List.of(), "Was not able to validate the input.", e);
 		}
-
 	}
 
 	private void checkForExplicitFieldOverrides(JsonSchema schema) {
