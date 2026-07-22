@@ -64,9 +64,10 @@ public class ExtendedDocumentSpecificationApiController extends AbstractApiContr
         }
         DocumentSpecification docSpec = tmForumMapper.map(tmForumMapper.map(createVO, URI.create(id)));
         docSpec.setLastUpdate(clock.instant());
-        docSpec.setAttachment(
-                s3AttachmentService.offloadAttachments(docSpec.getAttachment(), docSpec.getId().toString()));
-        return create(documentSpecificationApiController.getCheckingMono(docSpec), DocumentSpecification.class)
+        return s3AttachmentService.offloadAttachments(docSpec.getAttachment(), docSpec.getId().toString())
+                .doOnNext(docSpec::setAttachment)
+                .thenReturn(docSpec)
+                .flatMap(spec -> create(documentSpecificationApiController.getCheckingMono(spec), DocumentSpecification.class))
                 .map(tmForumMapper::map)
                 .map(HttpResponse::created);
     }
