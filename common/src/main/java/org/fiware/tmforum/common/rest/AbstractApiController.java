@@ -142,6 +142,11 @@ public abstract class AbstractApiController<T> {
 				}))
 				.map(PagedResult::items)
 				.map(List::stream);
+
+		if (!booleanFilters.isEmpty()) {
+			result = result.map(stream -> stream.filter(entity -> matchesBooleanFilters(entity, booleanFilters)));
+		}
+		return result;
 	}
 
 	/**
@@ -199,11 +204,6 @@ public abstract class AbstractApiController<T> {
 				}))
 				.map(PagedResult::items)
 				.map(List::stream);
-
-		if (!booleanFilters.isEmpty()) {
-			result = result.map(stream -> stream.filter(entity -> matchesBooleanFilters(entity, booleanFilters)));
-		}
-		return result;
 	}
 
 	protected <R> Mono<R> retrieve(String id, Class<R> entityClass) {
