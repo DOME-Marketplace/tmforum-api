@@ -142,7 +142,7 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 				TmForumExceptionReason.INVALID_DATA);
 	}
 
-	private Mono<Resource> getCheckingMono(Resource resource) {
+	protected Mono<Resource> getCheckingMono(Resource resource) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		references.add(resource.getRelatedParty());
 		Optional.ofNullable(resource.getPlace()).ifPresent(place -> references.add(List.of(place)));
