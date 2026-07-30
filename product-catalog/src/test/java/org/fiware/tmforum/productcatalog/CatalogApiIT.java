@@ -92,6 +92,19 @@ public class CatalogApiIT extends AbstractApiIT implements CatalogApiTestSpec {
 		assertEquals(expectedAsMap, responseAsMap, message);
 	}
 
+	@Test
+	public void createCatalog201_golden() throws Exception {
+		CatalogCreateVO catalogCreateVO = CatalogCreateVOTestExample.build().atSchemaLocation(null);
+		catalogCreateVO.setAtSchemaLocation(null);
+
+		HttpResponse<CatalogVO> catalogVOHttpResponse = callAndCatch(
+				() -> catalogApiTestClient.createCatalog(null, catalogCreateVO));
+		assertEquals(HttpStatus.CREATED, catalogVOHttpResponse.getStatus(), "The catalog should have been created.");
+
+		Map responseAsMap = catalogVOHttpResponse.getBody(Map.class).get();
+		assertMatchesGolden("catalog-create-empty", responseAsMap);
+	}
+
 	private static Stream<Arguments> provideValidCatalogs() {
 		List<Arguments> testEntries = new ArrayList<>();
 
