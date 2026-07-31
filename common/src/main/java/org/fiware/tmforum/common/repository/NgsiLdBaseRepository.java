@@ -10,6 +10,7 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.fiware.ngsi.api.EntitiesApiClient;
 import org.fiware.ngsi.api.SubscriptionsApiClient;
 import org.fiware.ngsi.model.EntityFragmentVO;
@@ -38,6 +39,7 @@ import java.util.stream.Stream;
  * Base-Repository implementation for using the NGSI-LD API as a storage backend. Supports caching and asynchronous
  * retrieval of entities and subscriptions.
  */
+@Slf4j
 @RequiredArgsConstructor
 public abstract class NgsiLdBaseRepository {
 
@@ -268,10 +270,34 @@ public abstract class NgsiLdBaseRepository {
 			filtered = entityVOStream.filter(entityVO ->
 					entityVO.getType() != null && expectedTypes.contains(entityVO.getType()));
 		}
+		List<Mono<Optional<T>>> mappingMonos = filtered
+				.map(entityVO -> mapOrSkip(entityVO, targetClass))
+				.toList();
+		if (mappingMonos.isEmpty()) {
+			return Mono.just(List.of());
+		}
 		return Mono.zip(
-				filtered.map(entityVO -> entityVOMapper.fromEntityVO(entityVO, targetClass)).toList(),
-				oList -> Arrays.stream(oList).map(targetClass::cast).toList()
+				mappingMonos,
+				oList -> Arrays.stream(oList)
+						.map(o -> ((Optional<T>) o))
+						.filter(Optional::isPresent)
+						.map(Optional::get)
+						.toList()
 		);
+	}
+
+	/**
+	 * Maps a single entity, swallowing (and logging) a {@code MappingException} instead of letting it
+	 * fail the whole list — a single malformed entity (e.g. a relationship attribute stored as a plain
+	 * Property) should not turn an entire page of otherwise-valid entities into a 500.
+	 */
+	private <T> Mono<Optional<T>> mapOrSkip(EntityVO entityVO, Class<T> targetClass) {
+		return entityVOMapper.fromEntityVO(entityVO, targetClass)
+				.map(Optional::of)
+				.onErrorResume(t -> {
+					log.warn("Skipping entity {}: was not able to map it to {}.", entityVO.getId(), targetClass.getSimpleName(), t);
+					return Mono.just(Optional.empty());
+				});
 	}
 
 	/**
@@ -287,19 +313,26 @@ public abstract class NgsiLdBaseRepository {
 	 */
 	protected <T> Mono<List<T>> zipToPolymorphicList(Stream<EntityVO> entityVOStream,
 			Function<String, Class<? extends T>> typeToClass) {
-		List<Mono<T>> mappingMonos = entityVOStream
+		List<Mono<Optional<T>>> mappingMonos = entityVOStream
 				.map(entityVO -> mapPolymorphicEntity(entityVO, typeToClass))
 				.toList();
 		if (mappingMonos.isEmpty()) {
 			return Mono.just(List.of());
 		}
-		return Mono.zip(mappingMonos, oList -> Arrays.stream(oList).map(o -> (T) o).toList());
+		return Mono.zip(
+				mappingMonos,
+				oList -> Arrays.stream(oList)
+						.map(o -> ((Optional<T>) o))
+						.filter(Optional::isPresent)
+						.map(Optional::get)
+						.toList()
+		);
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> Mono<T> mapPolymorphicEntity(EntityVO entityVO, Function<String, Class<? extends T>> typeToClass) {
+	private <T> Mono<Optional<T>> mapPolymorphicEntity(EntityVO entityVO, Function<String, Class<? extends T>> typeToClass) {
 		Class<? extends T> targetClass = typeToClass.apply(entityVO.getType());
-		return (Mono<T>) entityVOMapper.fromEntityVO(entityVO, targetClass);
+		return mapOrSkip(entityVO, (Class<T>) targetClass);
 	}
 
 	/**
