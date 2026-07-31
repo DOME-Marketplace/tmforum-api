@@ -6,10 +6,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class QueryParserTest {
 
@@ -162,6 +164,100 @@ class QueryParserTest {
 				// Same as first two but using .eq= syntax
 				Arguments.of("status.eq=Active,Started&color.eq=Red", new QueryParams(null, null, "color==\"Red\";status==\"Active\"|color==\"Red\";status==\"Started\"", Map.of()), MyPojo.class),
 				Arguments.of("status.eq=Active;status.eq=Started", new QueryParams(null, null, "status==(\"Active\",\"Started\")", Map.of()), MyPojo.class)
+		);
+	}
+
+	/**
+	 * Verifies the translation of the TMForum {@code sort} query parameter (comma-separated
+	 * properties, "-" prefix for descending) into NGSI-LD's {@code orderBy} syntax
+	 * (comma-separated "property;direction" pairs, direction omitted meaning ascending).
+	 */
+	@ParameterizedTest
+	@MethodSource("sortToOrderByQueries")
+	public void testSortToOrderByTranslation(Map<String, List<String>> parameters, String expectedOrderBy,
+			Class<?> targetClass) {
+		GeneralProperties properties = new GeneralProperties();
+		properties.setUseDotSeperator(true);
+
+		QueryParser qp = new QueryParser(properties);
+		assertEquals(expectedOrderBy, qp.toOrderBy(targetClass, parameters),
+				"The sort parameter should have been properly translated to orderBy.");
+	}
+
+	private static Stream<Arguments> sortToOrderByQueries() {
+		return Stream.of(
+				// no sort requested at all
+				Arguments.of(Map.of(), null, MyPojo.class),
+				// single ascending field, no direction suffix needed
+				Arguments.of(Map.of(QueryParser.SORT_KEY, List.of("color")), "color", MyPojo.class),
+				// single descending field
+				Arguments.of(Map.of(QueryParser.SORT_KEY, List.of("-color")), "color;desc", MyPojo.class),
+				// mixed ascending/descending, comma-separated
+				Arguments.of(Map.of(QueryParser.SORT_KEY, List.of("color,-temperature")), "color,temperature;desc", MyPojo.class),
+				Arguments.of(Map.of(QueryParser.SORT_KEY, List.of("-color,-temperature")), "color;desc,temperature;desc", MyPojo.class),
+				// nested attribute path
+				Arguments.of(Map.of(QueryParser.SORT_KEY, List.of("-sub.status")), "sub.status;desc", MyPojo.class),
+				// JSON-LD reserved token translation, same as filtering
+				Arguments.of(Map.of(QueryParser.SORT_KEY, List.of("-@type")), "atType;desc", MyEntityPojo.class)
+		);
+	}
+
+	@Test
+	public void testSortToOrderByReturnsNullWhenSortValueIsBlank() {
+		GeneralProperties properties = new GeneralProperties();
+		QueryParser qp = new QueryParser(properties);
+		assertNull(qp.toOrderBy(MyPojo.class, Map.of(QueryParser.SORT_KEY, List.of(""))),
+				"A blank sort value should not produce an orderBy.");
+	}
+
+	/**
+	 * Verifies that JSON-LD reserved keywords carried in TMF payloads
+	 * ({@code @type}, {@code @baseType}, {@code @schemaLocation}, {@code @id})
+	 * are rewritten to the persisted internal field names on
+	 * {@link org.fiware.tmforum.common.domain.Entity} so they become
+	 * filterable from the outside under their natural TMF JSON name.
+	 */
+	@ParameterizedTest
+	@MethodSource("jsonLdReservedTokenQueries")
+	public void testJsonLdReservedTokenTranslation(String tmForumQuery, QueryParams ngsiLdQuery, Class<?> targetClass) {
+		GeneralProperties properties = new GeneralProperties();
+		properties.setEncloseQuery(true);
+		properties.setNgsildOrQueryKey("|");
+		properties.setNgsildOrQueryValue("|");
+		properties.setIncludeAttributeInList(true);
+		properties.setUseDotSeperator(false);
+
+		QueryParser qp = new QueryParser(properties);
+		assertEquals(ngsiLdQuery, qp.toNgsiLdQuery(targetClass, tmForumQuery),
+				"JSON-LD reserved token query should translate to the persisted attribute name.");
+	}
+
+	private static Stream<Arguments> jsonLdReservedTokenQueries() {
+		return Stream.of(
+				// @type → atType (q= filter; not the types collector — line 134 checks contains("type") on the resolved path, which becomes ["atType"]).
+				Arguments.of("@type=BlueprintProductSpecification",
+						new QueryParams(null, null, "atType==\"BlueprintProductSpecification\"", Map.of()),
+						MyEntityPojo.class),
+				// @baseType → atBaseType
+				Arguments.of("@baseType=ProductSpecification",
+						new QueryParams(null, null, "atBaseType==\"ProductSpecification\"", Map.of()),
+						MyEntityPojo.class),
+				// @id → id, routed via the line-130 shortcut to the ids collector.
+				Arguments.of("@id=urn:ngsi-ld:product-specification:1",
+						new QueryParams("urn:ngsi-ld:product-specification:1", null, null, Map.of()),
+						MyEntityPojo.class),
+				// OR grouping survives the translation (combineParts runs on the raw token before translation).
+				Arguments.of("@type=A;@type=B",
+						new QueryParams(null, null, "(atType==\"A\"|atType==\"B\")", Map.of()),
+						MyEntityPojo.class),
+				// AND combination with a regular domain attribute.
+				Arguments.of("@type=A&status=Active",
+						new QueryParams(null, null, "atType==\"A\";status==\"Active\"", Map.of()),
+						MyEntityPojo.class),
+				// Mixed routing: @id goes to the ids collector, @type goes to the q= filter.
+				Arguments.of("@id=urn:x&@type=A",
+						new QueryParams("urn:x", null, "atType==\"A\"", Map.of()),
+						MyEntityPojo.class)
 		);
 	}
 }

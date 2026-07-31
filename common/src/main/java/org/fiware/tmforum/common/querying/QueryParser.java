@@ -35,7 +35,31 @@ import static org.fiware.tmforum.common.querying.Operator.REGEX;
 @RequiredArgsConstructor
 public class QueryParser {
 
-    private static final List<String> RESERVED_WORDS = List.of("id", "@id", "value", "@value", "type", "@type", "context", "@context");
+    /**
+     * JSON-LD reserved keywords carried in TMF payloads are persisted on
+     * {@link org.fiware.tmforum.common.domain.Entity} under sanitised
+     * NGSI-LD attribute names because NGSI-LD reserves the {@code @}-prefixed
+     * forms structurally. To let clients filter by the natural TMF JSON name
+     * (e.g. {@code ?@type=BlueprintProductSpecification}), we rewrite the
+     * query path segments to the persisted internal names before resolving
+     * the attribute against the target class.
+     *
+     * The {@code @id} entry maps to the unprefixed {@code id}, which is then
+     * picked up by the single-segment {@code id} shortcut further down and
+     * routed to NGSI-LD's native {@code id=} URL parameter — same end result
+     * as a direct {@code ?id=...} query.
+     */
+    private static final Map<String, String> JSON_LD_RESERVED_TO_ENTITY_FIELD = Map.of(
+            "@id", "id",
+            "@type", "atType",
+            "@baseType", "atBaseType",
+            "@schemaLocation", "atSchemaLocation");
+
+    private static List<String> translateJsonLdReservedTokens(List<String> pathParts) {
+        return pathParts.stream()
+                .map(p -> JSON_LD_RESERVED_TO_ENTITY_FIELD.getOrDefault(p, p))
+                .toList();
+    }
 
     protected final GeneralProperties generalProperties;
 
@@ -53,6 +77,51 @@ public class QueryParser {
     // the ";" in tm-forum parameters is an or
     public static final String TMFORUM_OR_KEY = ";";
     public static final String TMFORUM_AND = "&";
+
+    // TMForum marks a sort field as descending by prefixing it with "-", e.g. sort=name,-billDate
+    private static final String SORT_DESCENDING_PREFIX = "-";
+
+    // NGSI-LD's orderBy suffixes a field with ";desc" to sort descending; omitting it means ascending
+    private static final String ORDER_BY_DESCENDING_SUFFIX = ";desc";
+
+    /**
+     * Translates the TMForum {@code sort} query parameter (comma-separated list of properties,
+     * optionally prefixed with "-" for descending, e.g. {@code sort=name,-billDate}) into the
+     * NGSI-LD {@code orderBy} syntax (comma-separated list of "property;direction" pairs, direction
+     * defaulting to ascending when omitted, e.g. {@code orderBy=name,billDate;desc}).
+     *
+     * @param queryClass class used to resolve the sorted attributes to their NGSI-LD path
+     * @param parameters the request's query parameters
+     * @return the NGSI-LD {@code orderBy} value, or {@code null} if no {@code sort} was requested
+     */
+    public String toOrderBy(Class<?> queryClass, Map<String, List<String>> parameters) {
+        List<String> sortValues = parameters.get(SORT_KEY);
+        if (sortValues == null || sortValues.isEmpty()) {
+            return null;
+        }
+        String orderBy = sortValues.stream()
+                .flatMap(value -> Arrays.stream(value.split(TMFORUM_OR_VALUE)))
+                .filter(sortField -> !sortField.isBlank())
+                .map(sortField -> toOrderByPart(queryClass, sortField))
+                .collect(Collectors.joining(TMFORUM_OR_VALUE));
+        return orderBy.isBlank() ? null : orderBy;
+    }
+
+    private String toOrderByPart(Class<?> queryClass, String sortField) {
+        boolean descending = sortField.startsWith(SORT_DESCENDING_PREFIX);
+        String attributeName = descending ? sortField.substring(1) : sortField;
+
+        List<String> path = translateJsonLdReservedTokens(Arrays.asList(attributeName.split("\\.")));
+        NgsiLdAttribute attribute = JavaObjectMapper.getNGSIAttributePath(path, queryClass);
+        List<String> resolvedPath = new ArrayList<>(attribute.path().isEmpty()
+                ? path.stream().map(ReservedWordHandler::escapeReservedWords).toList()
+                : attribute.path());
+
+        String first = resolvedPath.remove(0);
+        String attrPath = first + String.join("", resolvedPath.stream().map(this::mapPathPart).toList());
+
+        return descending ? attrPath + ORDER_BY_DESCENDING_SUFFIX : attrPath;
+    }
 
     public static boolean hasFilter(Map<String, List<String>> values) {
         //remove the "non-filtering" keys
@@ -123,7 +192,7 @@ public class QueryParser {
         List<ResolvedCondition> resolvedConditions = new ArrayList<>();
         queryPartsStream.forEach(qp -> {
             NgsiLdAttribute attribute = JavaObjectMapper.getNGSIAttributePath(
-                    Arrays.asList(qp.attribute().split("\\.")),
+                    translateJsonLdReservedTokens(Arrays.asList(qp.attribute().split("\\."))),
                     queryClass);
             boolean isKnown = !attribute.path().isEmpty();
             if (!isKnown) {

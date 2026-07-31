@@ -37,10 +37,11 @@ loggers:
 general:
   contextUrl: https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld
   serverHost: http://localhost:8632
+  countHeader: NGSILD-Results-Count
+
 apiExtension:
   enabled: ${API_EXTENSION_ENABLED:false}
   putEnabled: ${API_EXTENSION_PUT_ENABLED:false}
-
 api:
   service-catalog:
     basepath: ${general.basepath:/}
