@@ -6,12 +6,15 @@ import io.github.wistefan.mapping.JavaObjectMapper;
 import io.micronaut.cache.annotation.CacheInvalidate;
 import io.micronaut.cache.annotation.CachePut;
 import io.micronaut.cache.annotation.Cacheable;
+import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.fiware.ngsi.api.EntitiesApiClient;
 import org.fiware.ngsi.api.SubscriptionsApiClient;
 import org.fiware.ngsi.model.EntityFragmentVO;
+import org.fiware.ngsi.model.EntityListVO;
 import org.fiware.ngsi.model.EntityVO;
 import org.fiware.ngsi.model.SubscriptionVO;
 import org.fiware.tmforum.common.CommonConstants;
@@ -29,12 +32,14 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
  * Base-Repository implementation for using the NGSI-LD API as a storage backend. Supports caching and asynchronous
  * retrieval of entities and subscriptions.
  */
+@Slf4j
 @RequiredArgsConstructor
 public abstract class NgsiLdBaseRepository {
 
@@ -59,7 +64,7 @@ public abstract class NgsiLdBaseRepository {
 	 */
 	@CachePut(value = CommonConstants.ENTITIES_CACHE_NAME, keyGenerator = EntityIdKeyGenerator.class)
 	public Mono<Void> createEntity(EntityVO entityVO, String ngsiLDTenant) {
-		return entitiesApi.createEntity(entityVO, ngsiLDTenant);
+		return entitiesApi.createEntity(entityVO, ngsiLDTenant).then();
 	}
 
 	/**
@@ -70,7 +75,7 @@ public abstract class NgsiLdBaseRepository {
 	 * @return completable with the result
 	 */
 	public Mono<Void> createSubscription(SubscriptionVO subscriptionVO, String ngsiLDTenant) {
-		return subscriptionsApi.createSubscription(subscriptionVO, ngsiLDTenant);
+		return subscriptionsApi.createSubscription(subscriptionVO, ngsiLDTenant).then();
 	}
 
 	/**
@@ -88,6 +93,7 @@ public abstract class NgsiLdBaseRepository {
 	public Mono<SubscriptionVO> retrieveSubscriptionById(URI subscriptionId) {
 		return subscriptionsApi
 				.retrieveSubscriptionById(subscriptionId)
+				.map(HttpResponse::body)
 				.onErrorResume(this::handleClientSubscriptionException);
 	}
 
@@ -100,7 +106,32 @@ public abstract class NgsiLdBaseRepository {
 	 */
 	@CacheInvalidate(value = CommonConstants.ENTITIES_CACHE_NAME, keyGenerator = EntityIdKeyGenerator.class)
 	public Mono<Void> patchEntity(URI entityId, EntityFragmentVO entityFragmentVO) {
-		return entitiesApi.updateEntity(entityId, entityFragmentVO, generalProperties.getTenant(), null);
+		return entitiesApi.updateEntity(entityId, entityFragmentVO, generalProperties.getTenant(), null).then();
+	}
+
+	/**
+	 * Replace an entity entirely using upsert with replace semantics. This avoids the array-merge
+	 * behaviour introduced in Scorpio 6.0.0 when using POST /entities/{id}/attrs.
+	 *
+	 * @param entityId id of the entity
+	 * @param entityVO the full merged entity to replace with
+	 * @return an empty mono
+	 */
+	@CacheInvalidate(value = CommonConstants.ENTITIES_CACHE_NAME, keyGenerator = EntityIdKeyGenerator.class)
+	public Mono<Void> replaceEntity(URI entityId, EntityVO entityVO) {
+		EntityListVO entityListVO = new EntityListVO();
+		entityListVO.add(entityVO);
+		return entitiesApi.batchEntityUpsert(entityListVO, "replace")
+				.then()
+				.onErrorResume(HttpClientResponseException.class, e -> {
+					// Scorpio 6.x may return 204/207 instead of 200; Micronaut treats status
+					// mismatch as an error even for 2xx responses. Accept any 2xx as success.
+					if (e.getStatus().getCode() >= 200 && e.getStatus().getCode() < 300) {
+						return Mono.empty();
+					}
+					return Mono.error(new NgsiLdRepositoryException(
+							"Was not able to replace entity via batch upsert.", Optional.of(e)));
+				});
 	}
 
 	/**
@@ -131,16 +162,39 @@ public abstract class NgsiLdBaseRepository {
 	}
 
 	/**
-	 * Update a domain entity
+	 * Update a domain entity. Routes to different strategies depending on {@code replaceOnUpdate}:
+	 * <ul>
+	 *   <li>{@code false} (default, Orion-LD): PATCH /attrs - correctly replaces array attributes.</li>
+	 *   <li>{@code true} (Scorpio 6.x): read-merge-write via batchEntityUpsert replace - prevents
+	 *       array-append behaviour introduced in Scorpio 6.0.0.</li>
+	 * </ul>
 	 *
 	 * @param id           id of the entity to be updated
-	 * @param domainEntity the entity to be created
+	 * @param domainEntity the (possibly partial) domain object carrying the updates
 	 * @param <T>          the type of the object
-	 * @return an empty mono
+	 * @return an empty mono, or an error if the entity does not exist
 	 */
 	public <T> Mono<Void> updateDomainEntity(String id, T domainEntity) {
-
+		EntityVO updateEntityVO = javaObjectMapper.toEntityVO(domainEntity);
+		URI entityId = URI.create(id);
+		if (generalProperties.isReplaceOnUpdate()) {
+			return retrieveEntityById(entityId)
+					.switchIfEmpty(Mono.error(new NgsiLdRepositoryException(
+							String.format("Entity %s does not exist.", id), Optional.empty())))
+					.map(existingEntityVO -> mergeForUpdate(existingEntityVO, updateEntityVO))
+					.flatMap(mergedEntityVO -> replaceEntity(entityId, mergedEntityVO));
+		}
 		return patchEntity(URI.create(id), ngsiMapper.map(javaObjectMapper.toEntityVO(domainEntity)));
+	}
+
+	private EntityVO mergeForUpdate(EntityVO existing, EntityVO update) {
+		update.getAdditionalProperties().forEach(existing::setAdditionalProperties);
+		if (update.getLocation() != null) existing.setLocation(update.getLocation());
+		if (update.getObservationSpace() != null) existing.setObservationSpace(update.getObservationSpace());
+		if (update.getOperationSpace() != null) existing.setOperationSpace(update.getOperationSpace());
+		if (update.getModifiedAt() != null) existing.setModifiedAt(update.getModifiedAt());
+		if (update.getAtContext() != null) existing.setAtContext(update.getAtContext());
+		return existing;
 	}
 
 	/**
@@ -161,7 +215,8 @@ public abstract class NgsiLdBaseRepository {
 					throw new DeletionException(String.format("Was not able to delete %s.", id),
 							t,
 							DeletionExceptionReason.UNKNOWN);
-				});
+				})
+				.then();
 	}
 
 	/**
@@ -193,7 +248,8 @@ public abstract class NgsiLdBaseRepository {
 					}
 					throw new DeletionException(String.format("Was not able to delete %s.", subscriptionId),
 							t, DeletionExceptionReason.UNKNOWN);
-				});
+				})
+				.then();
 	}
 
 	/**
@@ -214,10 +270,69 @@ public abstract class NgsiLdBaseRepository {
 			filtered = entityVOStream.filter(entityVO ->
 					entityVO.getType() != null && expectedTypes.contains(entityVO.getType()));
 		}
+		List<Mono<Optional<T>>> mappingMonos = filtered
+				.map(entityVO -> mapOrSkip(entityVO, targetClass))
+				.toList();
+		if (mappingMonos.isEmpty()) {
+			return Mono.just(List.of());
+		}
 		return Mono.zip(
-				filtered.map(entityVO -> entityVOMapper.fromEntityVO(entityVO, targetClass)).toList(),
-				oList -> Arrays.stream(oList).map(targetClass::cast).toList()
+				mappingMonos,
+				oList -> Arrays.stream(oList)
+						.map(o -> ((Optional<T>) o))
+						.filter(Optional::isPresent)
+						.map(Optional::get)
+						.toList()
 		);
+	}
+
+	/**
+	 * Maps a single entity, swallowing (and logging) a {@code MappingException} instead of letting it
+	 * fail the whole list — a single malformed entity (e.g. a relationship attribute stored as a plain
+	 * Property) should not turn an entire page of otherwise-valid entities into a 500.
+	 */
+	private <T> Mono<Optional<T>> mapOrSkip(EntityVO entityVO, Class<T> targetClass) {
+		return entityVOMapper.fromEntityVO(entityVO, targetClass)
+				.map(Optional::of)
+				.onErrorResume(t -> {
+					log.warn("Skipping entity {}: was not able to map it to {}.", entityVO.getId(), targetClass.getSimpleName(), t);
+					return Mono.just(Optional.empty());
+				});
+	}
+
+	/**
+	 * Helper method for combining a stream of entities of potentially different NGSI-LD types to a
+	 * single mono, mapping each entity to its own target class instead of one fixed class for the
+	 * whole batch. Used for polymorphic list endpoints that query several NGSI-LD types at once
+	 * (see {@link TmForumRepository#findEntitiesPolymorphic}).
+	 *
+	 * @param entityVOStream stream of entities, potentially of different NGSI-LD types
+	 * @param typeToClass    resolves the target class to map an entity to, based on its NGSI-LD type
+	 * @param <T>            common super-type of all resolved target classes
+	 * @return a mono, emitting a list of mapped entities
+	 */
+	protected <T> Mono<List<T>> zipToPolymorphicList(Stream<EntityVO> entityVOStream,
+			Function<String, Class<? extends T>> typeToClass) {
+		List<Mono<Optional<T>>> mappingMonos = entityVOStream
+				.map(entityVO -> mapPolymorphicEntity(entityVO, typeToClass))
+				.toList();
+		if (mappingMonos.isEmpty()) {
+			return Mono.just(List.of());
+		}
+		return Mono.zip(
+				mappingMonos,
+				oList -> Arrays.stream(oList)
+						.map(o -> ((Optional<T>) o))
+						.filter(Optional::isPresent)
+						.map(Optional::get)
+						.toList()
+		);
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T> Mono<Optional<T>> mapPolymorphicEntity(EntityVO entityVO, Function<String, Class<? extends T>> typeToClass) {
+		Class<? extends T> targetClass = typeToClass.apply(entityVO.getType());
+		return mapOrSkip(entityVO, (Class<T>) targetClass);
 	}
 
 	/**
@@ -226,6 +341,7 @@ public abstract class NgsiLdBaseRepository {
 	private Mono<EntityVO> asyncRetrieveEntityById(URI entityId, String ngSILDTenant, String attrs, String type, String options, String link) {
 		return entitiesApi
 				.retrieveEntityById(entityId, ngSILDTenant, attrs, type, options, link)
+				.map(HttpResponse::body)
 				.onErrorResume(this::handleClientEntityException);
 	}
 

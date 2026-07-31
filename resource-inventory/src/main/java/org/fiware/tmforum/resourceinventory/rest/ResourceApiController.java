@@ -1,14 +1,13 @@
 package org.fiware.tmforum.resourceinventory.rest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micronaut.core.annotation.NonNull;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.resourceinventory.api.ResourceApi;
-import org.fiware.resourceinventory.model.ResourceCreateVO;
-import org.fiware.resourceinventory.model.ResourceUpdateVO;
-import org.fiware.resourceinventory.model.ResourceVO;
+import org.fiware.resourceinventory.model.*;
 import org.fiware.tmforum.common.exception.TmForumException;
 import org.fiware.tmforum.common.exception.TmForumExceptionReason;
 import org.fiware.tmforum.common.mapping.IdHelper;
@@ -25,21 +24,43 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 import java.util.*;
 
+/**
+ * REST controller for the Resource API within the Resource Inventory module (TMF639).
+ * Provides CRUD operations for Resource entities and all sub-types
+ * (LogicalResource, SoftwareResource, API, InstalledSoftware, HostingPlatformRequirement,
+ * PhysicalResource, SoftwareSupportPackage).
+ *
+ * <p>Polymorphic dispatch is based on the {@code @type} field in request payloads and
+ * the NGSI-LD entity type embedded in entity IDs. Mirrors the pattern in the software-management
+ * module so that {@code /resourceInventoryManagement/v4/resource} and
+ * {@code /softwareCompute/v4/resource} produce identical responses for the same entity.</p>
+ */
 @Slf4j
 @Controller("${api.resource-inventory.basepath:/}")
 public class ResourceApiController extends AbstractApiController<Resource> implements ResourceApi {
 
 	private final TMForumMapper tmForumMapper;
+	private final ObjectMapper objectMapper;
 
 	public ResourceApiController(QueryParser queryParser, ReferenceValidationService validationService,
 			TmForumRepository resourceInventoryRepository,
-			TMForumMapper tmForumMapper, TMForumEventHandler eventHandler) {
+			TMForumMapper tmForumMapper, TMForumEventHandler eventHandler,
+			ObjectMapper objectMapper) {
 		super(queryParser, validationService, resourceInventoryRepository, eventHandler);
 		this.tmForumMapper = tmForumMapper;
+		this.objectMapper = objectMapper;
 	}
 
 	@Override
 	public Mono<HttpResponse<ResourceVO>> createResource(@NonNull ResourceCreateVO resourceCreateVO) {
+		String atType = resourceCreateVO.getAtType();
+		String entityType = ResourceTypeRegistry.getResourceEntityType(atType);
+
+		if (ResourceTypeRegistry.RESOURCE_TYPES.containsKey(atType)) {
+			return createSubTypeResource(resourceCreateVO, entityType, atType);
+		}
+
+		// Default: create base Resource
 		Resource resource = tmForumMapper.map(
 				tmForumMapper.map(resourceCreateVO,
 						IdHelper.toNgsiLd(UUID.randomUUID().toString(), Resource.TYPE_RESOURCE)));
@@ -51,6 +72,76 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 				.map(HttpResponse::created);
 	}
 
+	@SuppressWarnings("unchecked")
+	private Mono<HttpResponse<ResourceVO>> createSubTypeResource(ResourceCreateVO createVO,
+			String entityType, String atType) {
+		URI id = IdHelper.toNgsiLd(UUID.randomUUID().toString(), entityType);
+		Class<? extends Resource> domainClass = ResourceTypeRegistry.RESOURCE_TYPES.get(atType);
+
+		Resource resource = convertCreateVOToDomain(createVO, id, domainClass);
+		validateInternalRefs(resource);
+
+		return create(getCheckingMono(resource), Resource.class)
+				.map(this::mapResourceToVO)
+				.map(HttpResponse::created);
+	}
+
+	@SuppressWarnings("unchecked")
+	private Resource convertCreateVOToDomain(ResourceCreateVO createVO, URI id,
+			Class<? extends Resource> domainClass) {
+		Map<String, Object> map = objectMapper.convertValue(createVO, Map.class);
+		map.put("id", id.toString());
+		map.put("href", id.toString());
+
+		Object subTypeVO = objectMapper.convertValue(map, getVOClass(domainClass));
+		return mapVOToDomain(subTypeVO, domainClass);
+	}
+
+	private ResourceVO mapResourceToVO(Resource resource) {
+		// Order matters: check leaf types before parent types
+		if (resource instanceof InstalledSoftware is) {
+			return objectMapper.convertValue(tmForumMapper.mapToInstalledSoftwareVO(is), ResourceVO.class);
+		} else if (resource instanceof ApiResource ar) {
+			return objectMapper.convertValue(tmForumMapper.mapToApiVO(ar), ResourceVO.class);
+		} else if (resource instanceof SoftwareResource sr) {
+			return objectMapper.convertValue(tmForumMapper.mapToSoftwareResourceVO(sr), ResourceVO.class);
+		} else if (resource instanceof HostingPlatformRequirement hpr) {
+			return objectMapper.convertValue(
+					tmForumMapper.mapToHostingPlatformRequirementVO(hpr), ResourceVO.class);
+		} else if (resource instanceof LogicalResource lr) {
+			return objectMapper.convertValue(tmForumMapper.mapToLogicalResourceVO(lr), ResourceVO.class);
+		} else if (resource instanceof SoftwareSupportPackage ssp) {
+			return objectMapper.convertValue(
+					tmForumMapper.mapToSoftwareSupportPackageVO(ssp), ResourceVO.class);
+		} else if (resource instanceof PhysicalResource pr) {
+			return objectMapper.convertValue(tmForumMapper.mapToPhysicalResourceVO(pr), ResourceVO.class);
+		}
+		return tmForumMapper.map(resource);
+	}
+
+	private Class<?> getVOClass(Class<? extends Resource> domainClass) {
+		if (domainClass == LogicalResource.class) return LogicalResourceVO.class;
+		if (domainClass == SoftwareResource.class) return SoftwareResourceVO.class;
+		if (domainClass == ApiResource.class) return APIVO.class;
+		if (domainClass == InstalledSoftware.class) return InstalledSoftwareVO.class;
+		if (domainClass == HostingPlatformRequirement.class) return HostingPlatformRequirementVO.class;
+		if (domainClass == PhysicalResource.class) return PhysicalResourceVO.class;
+		if (domainClass == SoftwareSupportPackage.class) return SoftwareSupportPackageVO.class;
+		return ResourceVO.class;
+	}
+
+	private Resource mapVOToDomain(Object vo, Class<? extends Resource> domainClass) {
+		if (domainClass == LogicalResource.class) return tmForumMapper.map((LogicalResourceVO) vo);
+		if (domainClass == SoftwareResource.class) return tmForumMapper.map((SoftwareResourceVO) vo);
+		if (domainClass == ApiResource.class) return tmForumMapper.map((APIVO) vo);
+		if (domainClass == InstalledSoftware.class) return tmForumMapper.map((InstalledSoftwareVO) vo);
+		if (domainClass == HostingPlatformRequirement.class) return tmForumMapper.map((HostingPlatformRequirementVO) vo);
+		if (domainClass == PhysicalResource.class) return tmForumMapper.map((PhysicalResourceVO) vo);
+		if (domainClass == SoftwareSupportPackage.class) return tmForumMapper.map((SoftwareSupportPackageVO) vo);
+		throw new TmForumException("Unknown resource sub-type: " + domainClass.getSimpleName(),
+				TmForumExceptionReason.INVALID_DATA);
+	}
+
 	protected Mono<Resource> getCheckingMono(Resource resource) {
 		List<List<? extends ReferencedEntity>> references = new ArrayList<>();
 		references.add(resource.getRelatedParty());
@@ -60,7 +151,6 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 
 		Mono<Resource> checkingMono = getCheckingMono(resource, references);
 
-		// check resource refs
 		if (resource.getResourceRelationship() != null && !resource.getResourceRelationship().isEmpty()) {
 			List<Mono<Resource>> resourceRelCheckingMonos = resource.getResourceRelationship()
 					.stream()
@@ -73,7 +163,6 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 			}
 		}
 
-		// check features
 		if (resource.getActivationFeature() != null && !resource.getActivationFeature().isEmpty()) {
 			List<Mono<Resource>> featureConstraintsCheckingMonos = resource.getActivationFeature()
 					.stream()
@@ -109,7 +198,6 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 					.forEach(characteristic -> validateInternalCharacteristicRefs(characteristic,
 							resource.getResourceCharacteristic()));
 		}
-
 	}
 
 	private void validateInternalCharacteristicRefs(Characteristic characteristic,
@@ -142,8 +230,8 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 		List<String> featureIds = resource.getActivationFeature()
 				.stream()
 				.map(Feature::getTmfId)
+				.filter(Objects::nonNull)
 				.toList();
-		// check for duplicate ids
 		if (featureIds.size() != new HashSet<>(featureIds).size()) {
 			throw new TmForumException(String.format("Duplicate feature ids are not allowed: %s", featureIds),
 					TmForumExceptionReason.INVALID_DATA);
@@ -175,21 +263,28 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 	@Override
 	public Mono<HttpResponse<List<ResourceVO>>> listResource(@Nullable String fields, @Nullable Integer offset,
 			@Nullable Integer limit) {
-		return list(offset, limit, Resource.TYPE_RESOURCE, Resource.class)
-				.map(resourceStream -> resourceStream
-						.map(tmForumMapper::map)
-						.toList())
-				.switchIfEmpty(Mono.just(List.of()))
+		// Polymorphic listing: query all registered NGSI-LD entity types in a single broker call so
+		// offset/limit/count are correct against the combined result set, then dispatch each returned
+		// entity to its own concrete domain class so sub-type fields round-trip with full fidelity.
+		return listPolymorphic(offset, limit, ResourceTypeRegistry.ALL_RESOURCE_TYPES,
+				Resource.class, ResourceTypeRegistry::getResourceClass)
+				.map(stream -> stream.map(this::mapResourceToVO).toList())
 				.map(HttpResponse::ok);
 	}
 
 	@Override
 	public Mono<HttpResponse<ResourceVO>> patchResource(@NonNull String id,
 			@NonNull ResourceUpdateVO resourceUpdateVO) {
-		// non-ngsi-ld ids cannot exist.
 		if (!IdHelper.isNgsiLdId(id)) {
 			throw new TmForumException("Did not receive a valid id, such resource cannot exist.",
 					TmForumExceptionReason.NOT_FOUND);
+		}
+
+		String entityType = ResourceTypeRegistry.extractTypeFromId(id);
+		Class<? extends Resource> entityClass = ResourceTypeRegistry.getResourceClass(entityType);
+
+		if (entityClass != Resource.class) {
+			return patchSubTypeResource(id, resourceUpdateVO, entityClass);
 		}
 
 		Resource resource = tmForumMapper.map(resourceUpdateVO, id);
@@ -200,12 +295,42 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 				.map(HttpResponse::ok);
 	}
 
-	@Override
-	public Mono<HttpResponse<ResourceVO>> retrieveResource(@NonNull String id, @Nullable String fields) {
-		return retrieve(id, Resource.class)
+	@SuppressWarnings("unchecked")
+	private Mono<HttpResponse<ResourceVO>> patchSubTypeResource(String id,
+			ResourceUpdateVO updateVO, Class<? extends Resource> entityClass) {
+		Map<String, Object> map = objectMapper.convertValue(updateVO, Map.class);
+		map.put("id", id);
+		map.put("href", id);
+
+		Object subTypeVO = objectMapper.convertValue(map, getVOClass(entityClass));
+		Resource resource = mapVOToDomain(subTypeVO, entityClass);
+		validateInternalRefs(resource);
+
+		URI idUri = URI.create(id);
+		return repository.get(idUri, entityClass)
 				.switchIfEmpty(Mono.error(new TmForumException("No such resource exists.",
 						TmForumExceptionReason.NOT_FOUND)))
-				.map(tmForumMapper::map)
+				.flatMap(existing -> getCheckingMono(resource))
+				.flatMap(checked -> repository.updateDomainEntity(id, resource)
+						.then(repository.get(idUri, entityClass)))
+				.map(this::mapResourceToVO)
+				.map(HttpResponse::ok);
+	}
+
+	@Override
+	public Mono<HttpResponse<ResourceVO>> retrieveResource(@NonNull String id, @Nullable String fields) {
+		if (!IdHelper.isNgsiLdId(id)) {
+			throw new TmForumException("Did not receive a valid id, such resource cannot exist.",
+					TmForumExceptionReason.NOT_FOUND);
+		}
+
+		String entityType = ResourceTypeRegistry.extractTypeFromId(id);
+		Class<? extends Resource> entityClass = ResourceTypeRegistry.getResourceClass(entityType);
+
+		return retrieve(id, entityClass)
+				.switchIfEmpty(Mono.error(new TmForumException("No such resource exists.",
+						TmForumExceptionReason.NOT_FOUND)))
+				.map(this::mapResourceToVO)
 				.map(HttpResponse::ok);
 	}
 }

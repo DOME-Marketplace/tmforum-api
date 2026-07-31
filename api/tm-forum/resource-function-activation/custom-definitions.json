@@ -1,0 +1,11 @@
+{
+  "ResourceFunction_Update": {
+    "description": "A ResourceFunction is a behavior to transform inputs of any nature into outputs of any nature independently from the way it is provided.\nSkipped properties: id,href",
+    "properties": {
+      "usageState": {
+        "$ref": "#/definitions/ResourceUsageStateType",
+        "description": "Tracks the usage state of the resource, such as idle, active, busy and so on."
+      }
+    }
+  }
+}

@@ -12,6 +12,12 @@ while read -r i; do
   else
     echo "Download" $module
     wget -O api.json $url
+    custom_defs="../api/tm-forum/$module/custom-definitions.json"
+    if [ -f "$custom_defs" ]; then
+      echo "Merging custom definitions for" $module
+      jq --slurpfile custom "$custom_defs" '.definitions = (.definitions * $custom[0])' api.json > api.json.merged
+      mv api.json.merged api.json
+    fi
     mv api.json ../api/tm-forum/$module
   fi
   echo $elements
