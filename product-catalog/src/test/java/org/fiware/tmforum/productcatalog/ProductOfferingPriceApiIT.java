@@ -99,6 +99,19 @@ public class ProductOfferingPriceApiIT extends AbstractApiIT implements ProductO
 		assertEquals(expectedProductOfferingPrice, productOfferingVOHttpResponse.body(), message);
 	}
 
+	@Test
+	public void createProductOfferingPrice201_golden() throws Exception {
+		ProductOfferingPriceCreateVO productOfferingPriceCreateVO = ProductOfferingPriceCreateVOTestExample.build();
+		productOfferingPriceCreateVO.setAtSchemaLocation(null);
+
+		HttpResponse<ProductOfferingPriceVO> productOfferingVOHttpResponse = callAndCatch(
+				() -> productOfferingPriceApiTestClient.createProductOfferingPrice(null, productOfferingPriceCreateVO));
+		assertEquals(HttpStatus.CREATED, productOfferingVOHttpResponse.getStatus(), "The product offering price should have been created.");
+
+		Map responseAsMap = productOfferingVOHttpResponse.getBody(Map.class).get();
+		assertMatchesGolden("product-offering-price-create-empty", responseAsMap);
+	}
+
 	private static Stream<Arguments> provideValidProductOfferingPrices() {
 		List<Arguments> testEntries = new ArrayList<>();
 

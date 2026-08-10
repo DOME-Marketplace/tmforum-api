@@ -6,6 +6,7 @@ import io.micronaut.http.HttpStatus;
 import io.micronaut.test.annotation.MockBean;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.fiware.ngsi.api.EntitiesApiClient;
+import org.fiware.ngsi.model.EntityFragmentVO;
 import org.fiware.ngsi.model.EntityVO;
 import org.fiware.ngsi.model.PropertyVO;
 import org.fiware.productcatalog.api.ProductSpecificationApiTestClient;
@@ -102,6 +103,92 @@ public class ProductSpecificationApiIT extends AbstractApiIT implements ProductS
 		expectedProductOfferingPrice.setLastUpdate(currentTimeInstant);
 
 		assertEquals(expectedProductOfferingPrice, productSpecificationVOHttpResponse.body(), message);
+	}
+
+	@Test
+	public void createProductSpecification201_golden() throws Exception {
+		ProductSpecificationCreateVO productSpecificationCreateVO = ProductSpecificationCreateVOTestExample.build();
+		productSpecificationCreateVO.setAtSchemaLocation(null);
+
+		HttpResponse<ProductSpecificationVO> productSpecificationVOHttpResponse = callAndCatch(
+				() -> productSpecificationApiTestClient.createProductSpecification(null, productSpecificationCreateVO));
+		assertEquals(HttpStatus.CREATED, productSpecificationVOHttpResponse.getStatus(), "The product specification should have been created.");
+
+		Map responseAsMap = productSpecificationVOHttpResponse.getBody(Map.class).get();
+		assertMatchesGolden("product-specification-create-empty", responseAsMap);
+	}
+
+	@Test
+	public void productSpecCharacteristicExtMerge_golden() throws Exception {
+		// base characteristic, created through the normal API, as any client would send it.
+		// atSchemaLocation is required here: once the ext merge below adds an unknownProperty
+		// (cloudesireConfigurationParameterId), the response deserializer rejects the object
+		// unless it carries a @schemaLocation (see ValidatingDeserializer).
+		ProductSpecificationCharacteristicVO baseCharacteristic = new ProductSpecificationCharacteristicVO()
+				.id("char-1")
+				.name("Color")
+				.atSchemaLocation(URI.create("http://localhost:3000/schemas/properties-extension-schema.json"))
+				.productSpecCharacteristicValue(List.of(
+						new CharacteristicValueSpecificationVO().value("Red").isDefault(true)));
+
+		ProductSpecificationCreateVO productSpecificationCreateVO = ProductSpecificationCreateVOTestExample.build();
+		productSpecificationCreateVO.setAtSchemaLocation(null);
+		productSpecificationCreateVO.setTargetProductSchema(null);
+		productSpecificationCreateVO.setProductSpecCharacteristic(List.of(baseCharacteristic));
+
+		HttpResponse<ProductSpecificationVO> createResponse = callAndCatch(
+				() -> productSpecificationApiTestClient.createProductSpecification(null, productSpecificationCreateVO));
+		assertEquals(HttpStatus.CREATED, createResponse.getStatus(), "The product specification should have been created.");
+		String specId = createResponse.body().getId();
+
+		// simulate a vendor (e.g. Cloudesire) writing productSpecCharacteristic_ext directly onto the
+		// NGSI-LD entity, bypassing our create/update API entirely
+		Map<String, Object> matchedExtCharacteristic = Map.of(
+				"id", "char-1",
+				"cloudesireConfigurationParameterId", "vendor-abc-123");
+		Map<String, Object> newExtCharacteristic = Map.of(
+				"id", "char-2",
+				"name", "Size",
+				"@schemaLocation", "http://localhost:3000/schemas/properties-extension-schema.json",
+				"cloudesireConfigurationParameterId", "vendor-xyz-999");
+
+		EntityFragmentVO fragment = new EntityFragmentVO()
+				.atContext("https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld")
+				.id(URI.create(specId))
+				.type("product-specification");
+		fragment.setAdditionalProperties("productSpecCharacteristic_ext",
+				new PropertyVO().value(List.of(matchedExtCharacteristic, newExtCharacteristic)));
+		entitiesApi.updateEntity(URI.create(specId), fragment, null, null).block();
+
+		HttpResponse<ProductSpecificationVO> retrieveResponse = callAndCatch(
+				() -> productSpecificationApiTestClient.retrieveProductSpecification(null, specId, null));
+		assertEquals(HttpStatus.OK, retrieveResponse.getStatus(), "The retrieval should be ok.");
+
+		ProductSpecificationVO retrievedSpec = retrieveResponse.body();
+		List<ProductSpecificationCharacteristicVO> characteristics = retrievedSpec.getProductSpecCharacteristic();
+		assertEquals(2, characteristics.size(), "the matched characteristic plus the newly appended one");
+
+		ProductSpecificationCharacteristicVO merged = characteristics.stream()
+				.filter(c -> "char-1".equals(c.getId()))
+				.findFirst().orElseThrow();
+		assertEquals("Color", merged.getName(), "standard TMF fields must stay as mapped from the base attribute");
+		assertEquals("Red", merged.getProductSpecCharacteristicValue().get(0).getValue(),
+				"the base PSCV value must not be overwritten by the incomplete ext PSCV");
+		assertEquals("vendor-abc-123", merged.getUnknownProperties().get("cloudesireConfigurationParameterId"),
+				"the vendor-only field from _ext must be merged in");
+
+		ProductSpecificationCharacteristicVO appended = characteristics.stream()
+				.filter(c -> "char-2".equals(c.getId()))
+				.findFirst().orElseThrow();
+		assertEquals("Size", appended.getName());
+		assertEquals("vendor-xyz-999", appended.getUnknownProperties().get("cloudesireConfigurationParameterId"));
+
+		assertTrue(retrievedSpec.getUnknownProperties() == null
+						|| !retrievedSpec.getUnknownProperties().containsKey("productSpecCharacteristic_ext"),
+				"the raw ext attribute must not leak into the response");
+
+		Map responseAsMap = retrieveResponse.getBody(Map.class).get();
+		assertMatchesGolden("product-specification-pscv-ext-merge", responseAsMap);
 	}
 
 	private static Stream<Arguments> provideValidProductSpecifications() {
