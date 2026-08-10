@@ -3,8 +3,12 @@ package org.fiware.tmforum.productcatalog;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.core.type.Argument;
+import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
+import io.micronaut.http.client.HttpClient;
+import io.micronaut.http.client.annotation.Client;
 import io.micronaut.test.annotation.MockBean;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.fiware.ngsi.api.EntitiesApiClient;
@@ -45,6 +49,7 @@ public class ProductOfferingApiIT extends AbstractApiIT implements ProductOfferi
 
 	public final ProductOfferingApiTestClient productOfferingApiTestClient;
 	private final ProductSpecificationApiTestClient productSpecificationApiTestClient;
+	private final HttpClient httpClient;
 
 	private String message;
 	private ProductOfferingCreateVO productOfferingCreateVO;
@@ -54,10 +59,12 @@ public class ProductOfferingApiIT extends AbstractApiIT implements ProductOfferi
 	private Clock clock = mock(Clock.class);
 
 	public ProductOfferingApiIT(ProductOfferingApiTestClient productOfferingApiTestClient,
-								EntitiesApiClient entitiesApiClient, ObjectMapper objectMapper, GeneralProperties generalProperties, ProductSpecificationApiTestClient productSpecificationApiTestClient) {
+								EntitiesApiClient entitiesApiClient, ObjectMapper objectMapper, GeneralProperties generalProperties, ProductSpecificationApiTestClient productSpecificationApiTestClient,
+								@Client("/") HttpClient httpClient) {
 		super(entitiesApiClient, objectMapper, generalProperties);
 		this.productOfferingApiTestClient = productOfferingApiTestClient;
 		this.productSpecificationApiTestClient = productSpecificationApiTestClient;
+		this.httpClient = httpClient;
 	}
 
 	@MockBean(Clock.class)
@@ -451,6 +458,42 @@ public class ProductOfferingApiIT extends AbstractApiIT implements ProductOfferi
 				expectedProductOffering -> assertEquals(expectedProductOffering,
 						retrievedMap.get(expectedProductOffering.getId()),
 						"The correct productOfferings should be retrieved."));
+	}
+
+	@Test
+	public void listProductOfferingByLifecycleStatus_golden() throws Exception {
+		// the generated test client only exposes fields/offset/limit as query params (see
+		// ProductOfferingApi's OpenAPI spec) - TMForum-style filtering by an arbitrary standard
+		// field (e.g. lifecycleStatus) is handled by QueryParser reading the raw request, so it
+		// has to be exercised through a raw HttpClient call instead of the typed test client.
+		ProductSpecificationVO productSpecification = productSpecificationApiTestClient.createProductSpecification(null,
+				ProductSpecificationCreateVOTestExample.build().atSchemaLocation(null)
+						.targetProductSchema(null)).body();
+		ProductSpecificationRefVO productSpecReference = new ProductSpecificationRefVO().id(productSpecification.getId());
+
+		createProductOfferingWithLifecycleStatus(productSpecReference, "Active");
+		createProductOfferingWithLifecycleStatus(productSpecReference, "Active");
+		createProductOfferingWithLifecycleStatus(productSpecReference, "Retired");
+
+		HttpResponse<List<Map>> filteredResponse = httpClient.toBlocking()
+				.exchange(HttpRequest.GET("/productOffering?lifecycleStatus=Retired"), Argument.listOf(Map.class));
+
+		assertEquals(HttpStatus.OK, filteredResponse.getStatus(), "The filtered list should be accessible.");
+		List<Map> filteredOfferings = filteredResponse.body();
+		assertEquals(1, filteredOfferings.size(), "Only the Retired offering should match the filter.");
+
+		assertMatchesGolden("product-offering-list-filtered-by-lifecyclestatus", filteredOfferings);
+	}
+
+	private String createProductOfferingWithLifecycleStatus(ProductSpecificationRefVO productSpecReference,
+															 String lifecycleStatus) {
+		ProductOfferingCreateVO productOfferingCreateVO = ProductOfferingCreateVOTestExample.build().atSchemaLocation(null)
+				.productSpecification(productSpecReference)
+				.lifecycleStatus(lifecycleStatus)
+				.resourceCandidate(null)
+				.serviceCandidate(null)
+				.serviceLevelAgreement(null);
+		return productOfferingApiTestClient.createProductOffering(null, productOfferingCreateVO).body().getId();
 	}
 
 	@Test
