@@ -1,0 +1,9 @@
+{
+  "catalogType" : "New-Type",
+  "description" : "string",
+  "lifecycleStatus" : "string",
+  "name" : "string",
+  "version" : "string",
+  "@baseType" : "string",
+  "@type" : "string"
+}

@@ -437,6 +437,29 @@ public class CategoryApiIT extends AbstractApiIT implements CategoryApiTestSpec 
 		assertEquals(expectedCategory, updatedCategory, message);
 	}
 
+	@Test
+	public void patchCategory200_golden() throws Exception {
+		CategoryCreateVO categoryCreateVO = CategoryCreateVOTestExample.build().atSchemaLocation(null);
+		categoryCreateVO.setParentId(null);
+		HttpResponse<CategoryVO> createResponse = callAndCatch(
+				() -> categoryApiTestClient.createCategory(null, categoryCreateVO));
+		assertEquals(HttpStatus.CREATED, createResponse.getStatus(), "The category should have been created first.");
+
+		String categoryId = createResponse.body().getId();
+
+		CategoryUpdateVO categoryUpdateVO = CategoryUpdateVOTestExample.build().atSchemaLocation(null);
+		// the generated example for parentId is not valid, thus set it to null
+		categoryUpdateVO.setParentId(null);
+		categoryUpdateVO.setLifecycleStatus("Dead");
+
+		HttpResponse<CategoryVO> updateResponse = callAndCatch(
+				() -> categoryApiTestClient.patchCategory(null, categoryId, categoryUpdateVO));
+		assertEquals(HttpStatus.OK, updateResponse.getStatus(), "The category should have been updated.");
+
+		Map responseAsMap = updateResponse.getBody(Map.class).get();
+		assertMatchesGolden("category-patch-lifecyclestatus", responseAsMap);
+	}
+
 	private static Stream<Arguments> provideCategoryUpdates() {
 		List<Arguments> testEntries = new ArrayList<>();
 

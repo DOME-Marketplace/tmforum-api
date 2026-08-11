@@ -564,6 +564,32 @@ public class ProductSpecificationApiIT extends AbstractApiIT implements ProductS
 	}
 
 	@Test
+	public void patchProductSpecification200_golden() throws Exception {
+		ProductSpecificationCreateVO productSpecificationCreateVO = ProductSpecificationCreateVOTestExample.build()
+				.atSchemaLocation(null)
+				.targetProductSchema(null);
+
+		HttpResponse<ProductSpecificationVO> createResponse = callAndCatch(
+				() -> productSpecificationApiTestClient.createProductSpecification(null, productSpecificationCreateVO));
+		assertEquals(HttpStatus.CREATED, createResponse.getStatus(), "The product specification should have been created first.");
+
+		String productSpecificationId = createResponse.body().getId();
+
+		ProductSpecificationUpdateVO productSpecificationUpdateVO = ProductSpecificationUpdateVOTestExample.build()
+				.atSchemaLocation(null)
+				.targetProductSchema(null);
+		productSpecificationUpdateVO.setDescription("New description");
+
+		HttpResponse<ProductSpecificationVO> updateResponse = callAndCatch(
+				() -> productSpecificationApiTestClient.patchProductSpecification(null, productSpecificationId,
+						productSpecificationUpdateVO));
+		assertEquals(HttpStatus.OK, updateResponse.getStatus(), "The product specification should have been updated.");
+
+		Map responseAsMap = updateResponse.getBody(Map.class).get();
+		assertMatchesGolden("product-specification-patch-description", responseAsMap);
+	}
+
+	@Test
 	public void patchSpecEmptyList() throws Exception {
 
 		String resourceSpecId = "urn:ngsi-ld:resource-specification:test-spec";

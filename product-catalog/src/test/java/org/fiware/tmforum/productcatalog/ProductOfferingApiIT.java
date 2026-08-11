@@ -602,6 +602,36 @@ public class ProductOfferingApiIT extends AbstractApiIT implements ProductOfferi
 		assertEquals(expectedProductOffering, updatedCatalog, message);
 	}
 
+	@Test
+	public void patchProductOffering200_golden() throws Exception {
+		ProductOfferingCreateVO productOfferingCreateVO = ProductOfferingCreateVOTestExample.build().atSchemaLocation(null);
+		productOfferingCreateVO.setProductSpecification(null);
+		productOfferingCreateVO.setResourceCandidate(null);
+		productOfferingCreateVO.setServiceCandidate(null);
+		productOfferingCreateVO.setServiceLevelAgreement(null);
+
+		HttpResponse<ProductOfferingVO> createResponse = callAndCatch(
+				() -> productOfferingApiTestClient.createProductOffering(null, productOfferingCreateVO));
+		assertEquals(HttpStatus.CREATED, createResponse.getStatus(),
+				"The product offering should have been created first.");
+
+		String productOfferingId = createResponse.body().getId();
+
+		ProductOfferingUpdateVO productOfferingUpdateVO = ProductOfferingUpdateVOTestExample.build().atSchemaLocation(null);
+		productOfferingUpdateVO.setProductSpecification(null);
+		productOfferingUpdateVO.setResourceCandidate(null);
+		productOfferingUpdateVO.setServiceCandidate(null);
+		productOfferingUpdateVO.setServiceLevelAgreement(null);
+		productOfferingUpdateVO.setLifecycleStatus("Dead");
+
+		HttpResponse<ProductOfferingVO> updateResponse = callAndCatch(
+				() -> productOfferingApiTestClient.patchProductOffering(null, productOfferingId, productOfferingUpdateVO));
+		assertEquals(HttpStatus.OK, updateResponse.getStatus(), "The product offering should have been updated.");
+
+		Map responseAsMap = updateResponse.getBody(Map.class).get();
+		assertMatchesGolden("product-offering-patch-lifecyclestatus", responseAsMap);
+	}
+
 	private static Stream<Arguments> provideProductOfferingUpdates() {
 		List<Arguments> testEntries = new ArrayList<>();
 

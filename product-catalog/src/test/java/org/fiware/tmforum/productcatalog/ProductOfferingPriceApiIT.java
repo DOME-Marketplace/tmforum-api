@@ -520,6 +520,27 @@ public class ProductOfferingPriceApiIT extends AbstractApiIT implements ProductO
 		assertEquals(expectedProductOfferingPrice, updatedCatalog, message);
 	}
 
+	@Test
+	public void patchProductOfferingPrice200_golden() throws Exception {
+		ProductOfferingPriceCreateVO productOfferingPriceCreateVO = ProductOfferingPriceCreateVOTestExample.build().atSchemaLocation(null);
+		HttpResponse<ProductOfferingPriceVO> createResponse = callAndCatch(
+				() -> productOfferingPriceApiTestClient.createProductOfferingPrice(null, productOfferingPriceCreateVO));
+		assertEquals(HttpStatus.CREATED, createResponse.getStatus(), "The product offering price should have been created first.");
+
+		String productOfferingPriceId = createResponse.body().getId();
+
+		ProductOfferingPriceUpdateVO productOfferingPriceUpdateVO = ProductOfferingPriceUpdateVOTestExample.build().atSchemaLocation(null);
+		productOfferingPriceUpdateVO.setLifecycleStatus("Dead");
+
+		HttpResponse<ProductOfferingPriceVO> updateResponse = callAndCatch(
+				() -> productOfferingPriceApiTestClient.patchProductOfferingPrice(null, productOfferingPriceId,
+						productOfferingPriceUpdateVO));
+		assertEquals(HttpStatus.OK, updateResponse.getStatus(), "The product offering price should have been updated.");
+
+		Map responseAsMap = updateResponse.getBody(Map.class).get();
+		assertMatchesGolden("product-offering-price-patch-lifecyclestatus", responseAsMap);
+	}
+
 	private static Stream<Arguments> provideProductOfferingPriceUpdates() {
 		List<Arguments> testEntries = new ArrayList<>();
 

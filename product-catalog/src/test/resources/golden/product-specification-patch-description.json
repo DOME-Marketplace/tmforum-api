@@ -1,0 +1,17 @@
+{
+  "brand" : "string",
+  "description" : "New description",
+  "isBundle" : false,
+  "lifecycleStatus" : "string",
+  "name" : "string",
+  "productNumber" : "string",
+  "version" : "string",
+  "attachment" : [ ],
+  "bundledProductSpecification" : [ ],
+  "productSpecCharacteristic" : [ ],
+  "productSpecificationRelationship" : [ ],
+  "resourceSpecification" : [ ],
+  "serviceSpecification" : [ ],
+  "@baseType" : "string",
+  "@type" : "string"
+}
