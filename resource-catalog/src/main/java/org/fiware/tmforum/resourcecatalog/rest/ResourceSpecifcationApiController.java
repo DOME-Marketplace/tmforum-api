@@ -7,16 +7,7 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Controller;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.resourcecatalog.api.ResourceSpecificationApi;
-import org.fiware.resourcecatalog.model.APISpecificationVO;
-import org.fiware.resourcecatalog.model.HostingPlatformRequirementSpecificationVO;
-import org.fiware.resourcecatalog.model.LogicalResourceSpecificationVO;
-import org.fiware.resourcecatalog.model.PhysicalResourceSpecificationVO;
-import org.fiware.resourcecatalog.model.ResourceSpecificationCreateVO;
-import org.fiware.resourcecatalog.model.ResourceSpecificationUpdateVO;
-import org.fiware.resourcecatalog.model.ResourceSpecificationVO;
-import org.fiware.resourcecatalog.model.SoftwareResourceSpecificationVO;
-import org.fiware.resourcecatalog.model.SoftwareSpecificationVO;
-import org.fiware.resourcecatalog.model.SoftwareSupportPackageSpecificationVO;
+import org.fiware.resourcecatalog.model.*;
 import org.fiware.tmforum.common.exception.TmForumException;
 import org.fiware.tmforum.common.exception.TmForumExceptionReason;
 import org.fiware.tmforum.common.mapping.IdHelper;
@@ -26,18 +17,7 @@ import org.fiware.tmforum.common.repository.TmForumRepository;
 import org.fiware.tmforum.common.rest.AbstractApiController;
 import org.fiware.tmforum.common.validation.ReferenceValidationService;
 import org.fiware.tmforum.common.validation.ReferencedEntity;
-import org.fiware.tmforum.resource.ApiSpecification;
-import org.fiware.tmforum.resource.FeatureSpecification;
-import org.fiware.tmforum.resource.FeatureSpecificationCharacteristicRelationship;
-import org.fiware.tmforum.resource.HostingPlatformRequirementSpecification;
-import org.fiware.tmforum.resource.LogicalResourceSpecification;
-import org.fiware.tmforum.resource.PhysicalResourceSpecification;
-import org.fiware.tmforum.resource.ResourceSpecification;
-import org.fiware.tmforum.resource.ResourceSpecificationCharacteristic;
-import org.fiware.tmforum.resource.ResourceTypeRegistry;
-import org.fiware.tmforum.resource.SoftwareResourceSpecification;
-import org.fiware.tmforum.resource.SoftwareSpecification;
-import org.fiware.tmforum.resource.SoftwareSupportPackageSpecification;
+import org.fiware.tmforum.resource.*;
 import org.fiware.tmforum.resourcecatalog.TMForumMapper;
 import reactor.core.publisher.Mono;
 
@@ -316,29 +296,13 @@ public class ResourceSpecifcationApiController extends AbstractApiController<Res
 	@Override
 	public Mono<HttpResponse<List<ResourceSpecificationVO>>> listResourceSpecification(@Nullable String fields,
 			@Nullable Integer offset, @Nullable Integer limit) {
-		// Polymorphic listing: query each registered NGSI-LD entity type in parallel and merge.
-		// Each branch uses its concrete domain class so sub-type fields round-trip with full fidelity.
-		List<Mono<List<ResourceSpecificationVO>>> typeQueries = new ArrayList<>();
-
-		for (Map.Entry<String, Class<? extends ResourceSpecification>> entry :
-				ResourceTypeRegistry.SPEC_ENTITY_TYPES.entrySet()) {
-			String entityType = entry.getKey();
-			Class<? extends ResourceSpecification> entityClass = entry.getValue();
-			Mono<List<ResourceSpecificationVO>> query = list(offset, limit, entityType, entityClass)
-					.map(stream -> stream.map(this::mapSpecToVO).toList())
-					.switchIfEmpty(Mono.just(List.of()));
-			typeQueries.add(query);
-		}
-
-		return Mono.zip(typeQueries, results -> {
-			List<ResourceSpecificationVO> combined = new ArrayList<>();
-			for (Object result : results) {
-				@SuppressWarnings("unchecked")
-				List<ResourceSpecificationVO> typed = (List<ResourceSpecificationVO>) result;
-				combined.addAll(typed);
-			}
-			return combined;
-		}).map(HttpResponse::ok);
+		// Polymorphic listing: query all registered NGSI-LD entity types in a single broker call so
+		// offset/limit/count are correct against the combined result set, then dispatch each returned
+		// entity to its own concrete domain class so sub-type fields round-trip with full fidelity.
+		return listPolymorphic(offset, limit, ResourceTypeRegistry.ALL_SPEC_TYPES,
+				ResourceSpecification.class, ResourceTypeRegistry::getSpecClass)
+				.map(stream -> stream.map(this::mapSpecToVO).toList())
+				.map(HttpResponse::ok);
 	}
 
 	@Override
