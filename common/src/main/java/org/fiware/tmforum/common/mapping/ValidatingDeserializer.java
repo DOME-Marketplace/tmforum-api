@@ -1,11 +1,22 @@
 package org.fiware.tmforum.common.mapping;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyName;
 import com.fasterxml.jackson.databind.deser.std.DelegatingDeserializer;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
-import com.networknt.schema.*;
+import com.networknt.schema.InputFormat;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SchemaLocation;
+import com.networknt.schema.SchemaValidatorsConfig;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 import com.networknt.schema.resource.ClasspathSchemaLoader;
 import com.networknt.schema.resource.UriSchemaLoader;
 import lombok.extern.slf4j.Slf4j;
@@ -13,13 +24,7 @@ import org.fiware.tmforum.common.exception.SchemaValidationException;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -69,8 +74,17 @@ public class ValidatingDeserializer extends DelegatingDeserializer {
 		if (targetObject instanceof UnknownPreservingBase upb) {
 			Map<String, Object> unknownProperties = upb.getUnknownProperties();
 			if (unknownProperties != null && !unknownProperties.isEmpty()) {
+				// Resolve @type: prefer the dedicated getter, fall back to unknownProperties
+				// (some generated UpdateVOs lack an explicit @type field, so it ends up here)
+				String atType = upb.getAtType();
+				if (atType == null && unknownProperties.get("@type") instanceof String s) {
+					atType = s;
+				}
+
 				Map<String, Object> trulyUnknown = filterKnownSubTypeProperties(
-						unknownProperties, upb.getAtType());
+						unknownProperties, atType);
+				// @type is a standard TMForum polymorphism discriminator, not a custom extension
+				trulyUnknown.remove("@type");
 
 				if (upb.getAtSchemaLocation() != null) {
 					// validate only truly unknown properties against the schema
@@ -79,8 +93,9 @@ public class ValidatingDeserializer extends DelegatingDeserializer {
 						validateWithSchema(upb.getAtSchemaLocation(), unknownPropsJson);
 					}
 				} else if (!trulyUnknown.isEmpty()) {
-					throw new SchemaValidationException(List.of(),
-							"If no schema is provided, no additional properties are allowed.");
+					throw new SchemaValidationException(
+							List.of("Additional properties not allowed: " + trulyUnknown.keySet()),
+							"No additional properties are allowed without a @schemaLocation.");
 				}
 			}
 		}

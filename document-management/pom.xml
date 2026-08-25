@@ -24,11 +24,17 @@
             <scope>compile</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.fiware.tmforum</groupId>
+            <artifactId>service-shared-models</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
         <!-- MinIO SDK for S3 operations -->
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
-            <version>8.5.7</version>
         </dependency>
 
         <!-- lazy dev -->

@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.fiware.tmforum.common.domain.AttachmentRefOrValue;
 import org.fiware.tmforum.common.exception.TmForumException;
 import org.fiware.tmforum.common.exception.TmForumExceptionReason;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -73,53 +75,73 @@ public class S3AttachmentService {
         }
     }
 
-    public List<AttachmentRefOrValue> offloadAttachments(List<AttachmentRefOrValue> attachments, String entityId) {
+    public Mono<List<AttachmentRefOrValue>> offloadAttachments(List<AttachmentRefOrValue> attachments, String entityId) {
         if (attachments == null || attachments.isEmpty()) {
-            return attachments;
+            return Mono.justOrEmpty(attachments);
         }
 
-        return attachments.stream()
-                .map(att -> processAttachmentForOffload(att, entityId))
-                .collect(Collectors.toList());
+        return Mono.fromCallable(() -> {
+                    // Validate every attachment before uploading any of them - otherwise an invalid
+                    // attachment later in the list would throw after earlier ones are already sitting
+                    // in S3, orphaning them since the entity is never created.
+                    List<PreparedOffload> prepared = attachments.stream()
+                            .map(att -> prepareAttachmentForOffload(att, entityId))
+                            .collect(Collectors.toList());
+                    return prepared.stream()
+                            .map(this::uploadPreparedAttachment)
+                            .collect(Collectors.toList());
+                })
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
-    public List<AttachmentRefOrValue> hydrateAttachments(List<AttachmentRefOrValue> attachments) {
+    public Mono<List<AttachmentRefOrValue>> hydrateAttachments(List<AttachmentRefOrValue> attachments) {
         if (attachments == null || attachments.isEmpty()) {
-            return attachments;
+            return Mono.justOrEmpty(attachments);
         }
 
-        return attachments.stream()
-                .map(this::hydrateAttachment)
-                .collect(Collectors.toList());
+        return Mono.fromCallable(() -> attachments.stream()
+                        .map(this::hydrateAttachment)
+                        .collect(Collectors.toList()))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
-    public void deleteAttachments(List<AttachmentRefOrValue> attachments) {
+    public Mono<Void> deleteAttachments(List<AttachmentRefOrValue> attachments) {
         if (attachments == null || attachments.isEmpty()) {
-            return;
+            return Mono.empty();
         }
 
-        attachments.stream()
-                .map(AttachmentRefOrValue::getContent)
-                .filter(S3RetrievalInfo::isS3RetrievalInfo)
-                .map(S3RetrievalInfo::fromBase64)
-                .forEach(info -> {
-                    try {
-                        deleteFromS3(info.getKey());
-                    } catch (Exception e) {
-                        log.warn("Failed to delete S3 object {}: {}", info.getKey(), e.getMessage());
-                    }
-                });
+        return Mono.fromRunnable(() -> attachments.stream()
+                        .map(AttachmentRefOrValue::getContent)
+                        .filter(S3RetrievalInfo::isS3RetrievalInfo)
+                        .map(S3RetrievalInfo::fromBase64)
+                        .forEach(info -> {
+                            try {
+                                deleteFromS3(info.getKey());
+                            } catch (Exception e) {
+                                log.warn("Failed to delete S3 object {}: {}", info.getKey(), e.getMessage());
+                            }
+                        }))
+                .subscribeOn(Schedulers.boundedElastic())
+                .then();
     }
 
-    private AttachmentRefOrValue processAttachmentForOffload(AttachmentRefOrValue attachment, String entityId) {
+    /**
+     * Result of validating a single attachment ahead of upload. {@code decodedContent} is {@code null}
+     * for attachments that don't need uploading (null/empty content, already an S3 reference, or
+     * content that isn't valid base64 - stored as-is, same as before).
+     */
+    private record PreparedOffload(AttachmentRefOrValue attachment, byte[] decodedContent, String key) {
+    }
+
+    private PreparedOffload prepareAttachmentForOffload(AttachmentRefOrValue attachment, String entityId) {
         String content = attachment.getContent();
         if (content == null || content.isEmpty()) {
-            return attachment;
+            return new PreparedOffload(attachment, null, null);
         }
 
         // Skip if already S3 reference
         if (S3RetrievalInfo.isS3RetrievalInfo(content)) {
-            return attachment;
+            return new PreparedOffload(attachment, null, null);
         }
 
         // Decode base64 content
@@ -128,7 +150,7 @@ public class S3AttachmentService {
             decoded = Base64.getDecoder().decode(content);
         } catch (IllegalArgumentException e) {
             log.warn("Content is not valid base64, storing as-is");
-            return attachment;
+            return new PreparedOffload(attachment, null, null);
         }
 
         // Check size limit
@@ -139,23 +161,25 @@ public class S3AttachmentService {
                     TmForumExceptionReason.INVALID_DATA);
         }
 
-        // Generate key
-        String key = generateKey(entityId, attachment);
+        return new PreparedOffload(attachment, decoded, generateKey(entityId, attachment));
+    }
 
-        // Upload to S3
-        uploadToS3(key, decoded, attachment.getMimeType());
+    private AttachmentRefOrValue uploadPreparedAttachment(PreparedOffload prepared) {
+        if (prepared.decodedContent() == null) {
+            return prepared.attachment();
+        }
 
-        // Create retrieval info
+        uploadToS3(prepared.key(), prepared.decodedContent(), prepared.attachment().getMimeType());
+
         S3RetrievalInfo info = new S3RetrievalInfo(
                 config.getBucket(),
-                key,
-                decoded.length,
-                attachment.getMimeType(),
-                attachment.getName()
+                prepared.key(),
+                prepared.decodedContent().length,
+                prepared.attachment().getMimeType(),
+                prepared.attachment().getName()
         );
 
-        // Return modified attachment with retrieval info
-        AttachmentRefOrValue modified = copyAttachment(attachment);
+        AttachmentRefOrValue modified = copyAttachment(prepared.attachment());
         modified.setContent(info.toBase64());
         return modified;
     }

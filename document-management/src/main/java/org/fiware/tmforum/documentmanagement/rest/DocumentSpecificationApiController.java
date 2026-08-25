@@ -68,10 +68,10 @@ public class DocumentSpecificationApiController extends AbstractApiController<Do
         docSpec.setLastUpdate(clock.instant());
 
         // Offload attachments to S3
-        docSpec.setAttachment(
-                s3AttachmentService.offloadAttachments(docSpec.getAttachment(), docSpec.getId().toString()));
-
-        return create(getCheckingMono(docSpec), DocumentSpecification.class)
+        return s3AttachmentService.offloadAttachments(docSpec.getAttachment(), docSpec.getId().toString())
+                .doOnNext(docSpec::setAttachment)
+                .thenReturn(docSpec)
+                .flatMap(spec -> create(getCheckingMono(spec), DocumentSpecification.class))
                 .map(tmForumMapper::map)
                 .map(HttpResponse::created);
     }
@@ -86,8 +86,8 @@ public class DocumentSpecificationApiController extends AbstractApiController<Do
 
         // First retrieve to get attachment info for S3 cleanup
         return retrieve(id, DocumentSpecification.class)
-                .doOnNext(docSpec -> s3AttachmentService.deleteAttachments(docSpec.getAttachment()))
-                .flatMap(docSpec -> delete(id))
+                .flatMap(docSpec -> s3AttachmentService.deleteAttachments(docSpec.getAttachment())
+                        .then(delete(id)))
                 .switchIfEmpty(Mono.defer(() -> delete(id)));
     }
 
@@ -127,11 +127,9 @@ public class DocumentSpecificationApiController extends AbstractApiController<Do
                 .switchIfEmpty(Mono.error(new TmForumException(
                         "No such document specification exists.",
                         TmForumExceptionReason.NOT_FOUND)))
-                .map(docSpec -> {
-                    // Hydrate attachments from S3
-                    docSpec.setAttachment(s3AttachmentService.hydrateAttachments(docSpec.getAttachment()));
-                    return docSpec;
-                })
+                .flatMap(docSpec -> s3AttachmentService.hydrateAttachments(docSpec.getAttachment())
+                        .doOnNext(docSpec::setAttachment)
+                        .thenReturn(docSpec))
                 .map(tmForumMapper::map)
                 .map(HttpResponse::ok);
     }
@@ -139,6 +137,8 @@ public class DocumentSpecificationApiController extends AbstractApiController<Do
     protected Mono<DocumentSpecification> getCheckingMono(DocumentSpecification docSpec) {
         List<List<? extends ReferencedEntity>> references = new ArrayList<>();
         references.add(docSpec.getRelatedParty());
+        references.add(docSpec.getConstraint());
+        references.add(docSpec.getEntitySpecRelationship());
 
         return getCheckingMono(docSpec, references)
                 .onErrorMap(throwable -> new TmForumException(
