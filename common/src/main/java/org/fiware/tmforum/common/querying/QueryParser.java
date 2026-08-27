@@ -191,8 +191,10 @@ public class QueryParser {
         // Phase 1: resolve all query parts, tracking known-boolean and unknown conditions
         List<ResolvedCondition> resolvedConditions = new ArrayList<>();
         queryPartsStream.forEach(qp -> {
+            List<String> path = translateJsonLdReservedTokens(
+                    Arrays.asList(qp.attribute().split("\\.")));
             NgsiLdAttribute attribute = JavaObjectMapper.getNGSIAttributePath(
-                    translateJsonLdReservedTokens(Arrays.asList(qp.attribute().split("\\."))),
+                    path,
                     queryClass);
             boolean isKnown = !attribute.path().isEmpty();
             if (!isKnown) {

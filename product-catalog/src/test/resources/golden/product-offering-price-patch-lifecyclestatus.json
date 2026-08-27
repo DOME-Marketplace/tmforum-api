@@ -1,0 +1,28 @@
+{
+  "description" : "string",
+  "isBundle" : false,
+  "lifecycleStatus" : "Dead",
+  "name" : "string",
+  "percentage" : 12.34,
+  "priceType" : "string",
+  "recurringChargePeriodLength" : 12,
+  "recurringChargePeriodType" : "string",
+  "version" : "string",
+  "constraint" : [ ],
+  "place" : [ ],
+  "popRelationship" : [ ],
+  "price" : {
+    "unit" : "string",
+    "value" : 12.34
+  },
+  "pricingLogicAlgorithm" : [ ],
+  "prodSpecCharValueUse" : [ ],
+  "productOfferingTerm" : [ ],
+  "tax" : [ ],
+  "unitOfMeasure" : {
+    "amount" : 1.0,
+    "units" : "string"
+  },
+  "@baseType" : "string",
+  "@type" : "string"
+}

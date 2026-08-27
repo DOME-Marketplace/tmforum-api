@@ -1,0 +1,12 @@
+{
+  "catalogType" : "string",
+  "description" : "string",
+  "lifecycleStatus" : "string",
+  "name" : "string",
+  "version" : "string",
+  "category" : [ ],
+  "relatedParty" : [ ],
+  "validFor" : { },
+  "@baseType" : "string",
+  "@type" : "string"
+}

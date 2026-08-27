@@ -690,8 +690,16 @@ public class ResourceFunctionApiIT extends AbstractApiIT implements ResourceFunc
 		testEntries.add(
 				Arguments.of("The resource status should have been updated.", statusUpdate, expectedStatusUpdate));
 
-		// usageState is read-only and cannot be updated (skipped in ResourceFunction_Update schema)
-		// Removed usageState test as it's not allowed in update operations per TMF664 spec
+		ResourceFunctionUpdateVO usageStateUpdate = ResourceFunctionUpdateVOTestExample.build().atSchemaLocation(null)
+				.usageState(ResourceUsageStateTypeVO.ACTIVE)
+				.place(null)
+				.resourceSpecification(null);
+		ResourceFunctionVO expectedUsageStateUpdate = ResourceFunctionVOTestExample.build().atSchemaLocation(null)
+				.usageState(ResourceUsageStateTypeVO.ACTIVE)
+				.place(null)
+				.resourceSpecification(null);
+		testEntries.add(
+				Arguments.of("The usageState should have been updated.", usageStateUpdate, expectedUsageStateUpdate));
 
 		return testEntries.stream();
 	}

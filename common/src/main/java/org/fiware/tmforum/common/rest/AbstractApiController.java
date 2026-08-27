@@ -132,6 +132,15 @@ public abstract class AbstractApiController<T> {
 						Optional.ofNullable(queryParams).map(QueryParams::id).orElse(null),
 						Optional.ofNullable(queryParams).map(QueryParams::type).orElse(type),
 						orderBy)
+				// apply the boolean post-filter (if any) before computing pagination attributes, so the
+				// reported returned-count/Link headers match what's actually in the response body rather
+				// than the broker's pre-filter page size
+				.map(pagedResult -> booleanFilters.isEmpty() ? pagedResult
+						: new PagedResult<>(
+								pagedResult.items().stream()
+										.filter(entity -> matchesBooleanFilters(entity, booleanFilters))
+										.toList(),
+								pagedResult.offset(), pagedResult.limit(), pagedResult.totalCount()))
 				.doOnNext(pagedResult -> optionalHttpRequest.ifPresent(theRequest -> {
 					theRequest.setAttribute(PaginationFilter.OFFSET_ATTR, pagedResult.offset())
 							.setAttribute(PaginationFilter.LIMIT_ATTR, pagedResult.limit())
@@ -143,9 +152,6 @@ public abstract class AbstractApiController<T> {
 				.map(PagedResult::items)
 				.map(List::stream);
 
-		if (!booleanFilters.isEmpty()) {
-			result = result.map(stream -> stream.filter(entity -> matchesBooleanFilters(entity, booleanFilters)));
-		}
 		return result;
 	}
 
@@ -192,6 +198,7 @@ public abstract class AbstractApiController<T> {
 				.findEntitiesPolymorphic(offset, limit,
 						Optional.ofNullable(queryParams).map(QueryParams::type).orElse(types),
 						Optional.ofNullable(queryParams).map(QueryParams::query).orElse(null),
+						Optional.ofNullable(queryParams).map(QueryParams::id).orElse(null),
 						orderBy,
 						typeToClass)
 				.doOnNext(pagedResult -> optionalHttpRequest.ifPresent(theRequest -> {

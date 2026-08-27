@@ -473,6 +473,351 @@
         }
       }
     },
+    "Any": {},
+    "AssociationSpecificationRef": {
+      "type": "object",
+      "description": "reference to an AssociationSpecification object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "unique identifier"
+        },
+        "href": {
+          "type": "string",
+          "format": "uri",
+          "description": "Hyperlink reference"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the related entity."
+        },
+        "@baseType": {
+          "type": "string",
+          "description": "When sub-classing, this defines the super-class"
+        },
+        "@schemaLocation": {
+          "type": "string",
+          "format": "uri",
+          "description": "A URI to a JSON-Schema file that defines additional attributes and relationships"
+        },
+        "@type": {
+          "type": "string",
+          "description": "When sub-classing, this defines the sub-class Extensible name"
+        },
+        "@referredType": {
+          "type": "string",
+          "description": "The actual type of the target instance when needed for disambiguation."
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "CharacteristicSpecification": {
+      "type": "object",
+      "description": "This class defines a characteristic specification.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique ID for the characteristic"
+        },
+        "configurable": {
+          "type": "boolean",
+          "description": "If true, the Boolean indicates that the target Characteristic is configurable"
+        },
+        "description": {
+          "type": "string",
+          "description": "A narrative that explains the CharacteristicSpecification."
+        },
+        "extensible": {
+          "type": "boolean",
+          "description": "An indicator that specifies that the values for the characteristic can be extended by adding new values when instantiating a characteristic for a resource."
+        },
+        "isUnique": {
+          "type": "boolean",
+          "description": "An indicator that specifies if a value is unique for the specification. Possible values are; \"unique while value is in effect\" and \"unique whether value is in effect or not\""
+        },
+        "maxCardinality": {
+          "type": "integer",
+          "description": "The maximum number of instances a CharacteristicValue can take on. For example, zero to five phone numbers in a group calling plan, where five is the value for the maxCardinality."
+        },
+        "minCardinality": {
+          "type": "integer",
+          "description": "The minimum number of instances a CharacteristicValue can take on. For example, zero to five phone numbers in a group calling plan, where zero is the value for the minCardinality."
+        },
+        "name": {
+          "type": "string",
+          "description": "A word, term, or phrase by which this characteristic specification is known and distinguished from other characteristic specifications."
+        },
+        "regex": {
+          "type": "string",
+          "description": "A rule or principle represented in regular expression used to derive the value of a characteristic value."
+        },
+        "valueType": {
+          "type": "string",
+          "description": "A kind of value that the characteristic can take on, such as numeric, text and so forth"
+        },
+        "charSpecRelationship": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CharacteristicSpecificationRelationship"
+          },
+          "description": "An aggregation, migration, substitution, dependency or exclusivity relationship between/among Specification Characteristics."
+        },
+        "characteristicValueSpecification": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CharacteristicValueSpecification"
+          },
+          "description": "A CharacteristicValueSpecification object is used to define a set of attributes, each of which can be assigned to a corresponding set of attributes in a CharacteristicSpecification object. The values of the attributes in the CharacteristicValueSpecification object describe the values of the attributes that a corresponding Characteristic object can take on."
+        },
+        "validFor": {
+          "$ref": "#/definitions/TimePeriod",
+          "description": "The period of time for which a characteristic is applicable."
+        },
+        "@baseType": {
+          "type": "string",
+          "description": "When sub-classing, this defines the super-class"
+        },
+        "@schemaLocation": {
+          "type": "string",
+          "format": "uri",
+          "description": "A URI to a JSON-Schema file that defines additional attributes and relationships"
+        },
+        "@type": {
+          "type": "string",
+          "description": "When sub-classing, this defines the sub-class Extensible name"
+        },
+        "@valueSchemaLocation": {
+          "type": "string",
+          "description": "This (optional) field provides a link to the schema describing the value type."
+        }
+      }
+    },
+    "CharacteristicSpecificationRelationship": {
+      "type": "object",
+      "description": "An aggregation, migration, substitution, dependency or exclusivity relationship between/among Characteristic specifications. The specification characteristic is embedded within the specification whose ID and href are in this entity, and identified by its ID.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "unique identifier"
+        },
+        "href": {
+          "type": "string",
+          "format": "uri",
+          "description": "Hyperlink reference"
+        },
+        "characteristicSpecificationId": {
+          "type": "string",
+          "description": "Unique identifier of the characteristic within the specification"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the target characteristic within the specification"
+        },
+        "parentSpecificationHref": {
+          "type": "string",
+          "format": "uri",
+          "description": "Hyperlink reference to the parent specification containing the target characteristic"
+        },
+        "parentSpecificationId": {
+          "type": "string",
+          "description": "Unique identifier of the parent specification containing the target characteristic"
+        },
+        "relationshipType": {
+          "type": "string",
+          "description": "Type of relationship such as aggregation, migration, substitution, dependency, exclusivity"
+        },
+        "validFor": {
+          "$ref": "#/definitions/TimePeriod",
+          "description": "The period for which the object is valid"
+        },
+        "@baseType": {
+          "type": "string",
+          "description": "When sub-classing, this defines the super-class"
+        },
+        "@schemaLocation": {
+          "type": "string",
+          "format": "uri",
+          "description": "A URI to a JSON-Schema file that defines additional attributes and relationships"
+        },
+        "@type": {
+          "type": "string",
+          "description": "When sub-classing, this defines the sub-class Extensible name"
+        }
+      }
+    },
+    "CharacteristicValueSpecification": {
+      "type": "object",
+      "description": "specification of a value (number or text or an object) that can be assigned to a Characteristic.",
+      "properties": {
+        "isDefault": {
+          "type": "boolean",
+          "description": "If true, the Boolean Indicates if the value is the default value for a characteristic"
+        },
+        "rangeInterval": {
+          "type": "string",
+          "description": "An indicator that specifies the inclusion or exclusion of the valueFrom and valueTo attributes. If applicable, possible values are \"open\", \"closed\", \"closedBottom\" and \"closedTop\"."
+        },
+        "regex": {
+          "type": "string",
+          "description": "A regular expression constraint for given value"
+        },
+        "unitOfMeasure": {
+          "type": "string",
+          "description": "A length, surface, volume, dry measure, liquid measure, money, weight, time, and the like. In general, a determinate quantity or magnitude of the kind designated, taken as a standard of comparison for others of the same kind, in assigning to them numerical values, as 1 foot, 1 yard, 1 mile, 1 square foot."
+        },
+        "valueFrom": {
+          "type": "integer",
+          "description": "The low range value that a characteristic can take on"
+        },
+        "valueTo": {
+          "type": "integer",
+          "description": "The upper range value that a characteristic can take on"
+        },
+        "valueType": {
+          "type": "string",
+          "description": "A kind of value that the characteristic value can take on, such as numeric, text and so forth"
+        },
+        "validFor": {
+          "$ref": "#/definitions/TimePeriod",
+          "description": "The period of time for which a value is applicable."
+        },
+        "value": {
+          "$ref": "#/definitions/Any",
+          "description": "A discrete value that the characteristic can take on, or the actual value of the characteristic"
+        },
+        "@baseType": {
+          "type": "string",
+          "description": "When sub-classing, this defines the super-class"
+        },
+        "@schemaLocation": {
+          "type": "string",
+          "format": "uri",
+          "description": "A URI to a JSON-Schema file that defines additional attributes and relationships"
+        },
+        "@type": {
+          "type": "string",
+          "description": "When sub-classing, this defines the sub-class Extensible name"
+        }
+      }
+    },
+    "ConstraintRef": {
+      "type": "object",
+      "description": "Constraint reference. The Constraint resource represents a policy/rule applied to an entity or entity spec.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "unique identifier"
+        },
+        "href": {
+          "type": "string",
+          "format": "uri",
+          "description": "Hyperlink reference"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the related entity."
+        },
+        "version": {
+          "type": "string",
+          "description": "constraint version"
+        },
+        "@baseType": {
+          "type": "string",
+          "description": "When sub-classing, this defines the super-class"
+        },
+        "@schemaLocation": {
+          "type": "string",
+          "format": "uri",
+          "description": "A URI to a JSON-Schema file that defines additional attributes and relationships"
+        },
+        "@type": {
+          "type": "string",
+          "description": "When sub-classing, this defines the sub-class Extensible name"
+        },
+        "@referredType": {
+          "type": "string",
+          "description": "The actual type of the target instance when needed for disambiguation."
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "EntitySpecificationRelationship": {
+      "type": "object",
+      "description": "A migration, substitution, dependency or exclusivity relationship between/among entity specifications.",
+      "required": [
+        "relationshipType"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "unique identifier"
+        },
+        "href": {
+          "type": "string",
+          "format": "uri",
+          "description": "Hyperlink reference"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the related entity."
+        },
+        "relationshipType": {
+          "type": "string",
+          "description": "Type of relationship such as migration, substitution, dependency, exclusivity"
+        },
+        "role": {
+          "type": "string",
+          "description": "The association role for this entity specification"
+        },
+        "associationSpec": {
+          "$ref": "#/definitions/AssociationSpecificationRef",
+          "description": "A specification for an association used by this relationship"
+        },
+        "validFor": {
+          "$ref": "#/definitions/TimePeriod",
+          "description": "The period for which the entitySpecRelationship is valid"
+        },
+        "@baseType": {
+          "type": "string",
+          "description": "When sub-classing, this defines the super-class"
+        },
+        "@schemaLocation": {
+          "type": "string",
+          "format": "uri",
+          "description": "A URI to a JSON-Schema file that defines additional attributes and relationships"
+        },
+        "@type": {
+          "type": "string",
+          "description": "When sub-classing, this defines the sub-class Extensible name"
+        },
+        "@referredType": {
+          "type": "string",
+          "description": "The actual type of the target instance when needed for disambiguation."
+        }
+      }
+    },
+    "TargetEntitySchema": {
+      "type": "object",
+      "description": "The reference object to the schema and type of target entity which is described by a specification",
+      "required": [
+        "@schemaLocation",
+        "@type"
+      ],
+      "properties": {
+        "@schemaLocation": {
+          "type": "string",
+          "description": "This field provides a link to the schema describing the target entity"
+        },
+        "@type": {
+          "type": "string",
+          "description": "Class type of the target entity"
+        }
+      }
+    },
     "DocumentSpecification": {
       "type": "object",
       "description": "A DocumentSpecification provides the characteristics and constraints that describe a particular type of Document, with S3-backed attachment storage.",
@@ -527,6 +872,31 @@
             "$ref": "#/definitions/RelatedParty"
           },
           "description": "Parties who manage or otherwise have an interest in this specification"
+        },
+        "constraint": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ConstraintRef"
+          },
+          "description": "This is a list of constraint references applied to this specification"
+        },
+        "entitySpecRelationship": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntitySpecificationRelationship"
+          },
+          "description": "Relationship to another specification"
+        },
+        "specCharacteristic": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CharacteristicSpecification"
+          },
+          "description": "List of characteristics that the entity can take"
+        },
+        "targetEntitySchema": {
+          "$ref": "#/definitions/TargetEntitySchema",
+          "description": "Pointer to a schema that defines the target entity"
         },
         "validFor": {
           "$ref": "#/definitions/TimePeriod",
@@ -591,6 +961,31 @@
           },
           "description": "Parties who manage or otherwise have an interest in this specification"
         },
+        "constraint": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ConstraintRef"
+          },
+          "description": "This is a list of constraint references applied to this specification"
+        },
+        "entitySpecRelationship": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntitySpecificationRelationship"
+          },
+          "description": "Relationship to another specification"
+        },
+        "specCharacteristic": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CharacteristicSpecification"
+          },
+          "description": "List of characteristics that the entity can take"
+        },
+        "targetEntitySchema": {
+          "$ref": "#/definitions/TargetEntitySchema",
+          "description": "Pointer to a schema that defines the target entity"
+        },
         "validFor": {
           "$ref": "#/definitions/TimePeriod",
           "description": "The period for which this REST resource is valid"
@@ -650,6 +1045,31 @@
             "$ref": "#/definitions/RelatedParty"
           },
           "description": "Parties who manage or otherwise have an interest in this specification"
+        },
+        "constraint": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ConstraintRef"
+          },
+          "description": "This is a list of constraint references applied to this specification"
+        },
+        "entitySpecRelationship": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntitySpecificationRelationship"
+          },
+          "description": "Relationship to another specification"
+        },
+        "specCharacteristic": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CharacteristicSpecification"
+          },
+          "description": "List of characteristics that the entity can take"
+        },
+        "targetEntitySchema": {
+          "$ref": "#/definitions/TargetEntitySchema",
+          "description": "Pointer to a schema that defines the target entity"
         },
         "validFor": {
           "$ref": "#/definitions/TimePeriod",

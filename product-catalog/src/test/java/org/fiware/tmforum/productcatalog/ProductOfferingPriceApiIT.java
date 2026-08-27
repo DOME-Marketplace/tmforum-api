@@ -99,6 +99,19 @@ public class ProductOfferingPriceApiIT extends AbstractApiIT implements ProductO
 		assertEquals(expectedProductOfferingPrice, productOfferingVOHttpResponse.body(), message);
 	}
 
+	@Test
+	public void createProductOfferingPrice201_golden() throws Exception {
+		ProductOfferingPriceCreateVO productOfferingPriceCreateVO = ProductOfferingPriceCreateVOTestExample.build();
+		productOfferingPriceCreateVO.setAtSchemaLocation(null);
+
+		HttpResponse<ProductOfferingPriceVO> productOfferingVOHttpResponse = callAndCatch(
+				() -> productOfferingPriceApiTestClient.createProductOfferingPrice(null, productOfferingPriceCreateVO));
+		assertEquals(HttpStatus.CREATED, productOfferingVOHttpResponse.getStatus(), "The product offering price should have been created.");
+
+		Map responseAsMap = productOfferingVOHttpResponse.getBody(Map.class).get();
+		assertMatchesGolden("product-offering-price-create-empty", responseAsMap);
+	}
+
 	private static Stream<Arguments> provideValidProductOfferingPrices() {
 		List<Arguments> testEntries = new ArrayList<>();
 
@@ -505,6 +518,64 @@ public class ProductOfferingPriceApiIT extends AbstractApiIT implements ProductO
 
 		expectedProductOfferingPrice.setBundledPopRelationship(null);
 		assertEquals(expectedProductOfferingPrice, updatedCatalog, message);
+	}
+
+	@Test
+	public void patchProductOfferingPrice200_golden() throws Exception {
+		ProductOfferingPriceCreateVO productOfferingPriceCreateVO = ProductOfferingPriceCreateVOTestExample.build().atSchemaLocation(null);
+		HttpResponse<ProductOfferingPriceVO> createResponse = callAndCatch(
+				() -> productOfferingPriceApiTestClient.createProductOfferingPrice(null, productOfferingPriceCreateVO));
+		assertEquals(HttpStatus.CREATED, createResponse.getStatus(), "The product offering price should have been created first.");
+
+		String productOfferingPriceId = createResponse.body().getId();
+
+		ProductOfferingPriceUpdateVO productOfferingPriceUpdateVO = ProductOfferingPriceUpdateVOTestExample.build().atSchemaLocation(null);
+		productOfferingPriceUpdateVO.setLifecycleStatus("Dead");
+
+		HttpResponse<ProductOfferingPriceVO> updateResponse = callAndCatch(
+				() -> productOfferingPriceApiTestClient.patchProductOfferingPrice(null, productOfferingPriceId,
+						productOfferingPriceUpdateVO));
+		assertEquals(HttpStatus.OK, updateResponse.getStatus(), "The product offering price should have been updated.");
+
+		Map responseAsMap = updateResponse.getBody(Map.class).get();
+		assertMatchesGolden("product-offering-price-patch-lifecyclestatus", responseAsMap);
+	}
+
+	@Test
+	public void patchProductOfferingPriceReEscapesReservedWords_golden() throws Exception {
+		// Regression test for the read-merge-write update path (replaceOnUpdate=true, Scorpio):
+		// an unknownProperty carrying raw JSON-LD keywords - e.g. an expanded ODRL policy, the
+		// real-world case that surfaced the bug - must survive a PATCH untouched.
+		// NgsiLdBaseRepository.mergeForUpdate() has to re-escape them (tmfEscaped-@type/@id)
+		// before writing the merged entity back, or a broker that rejects/drops raw keywords on
+		// write silently corrupts the value.
+		ProductOfferingPriceCreateVO productOfferingPriceCreateVO = ProductOfferingPriceCreateVOTestExample.build()
+				.atSchemaLocation("http://localhost:3000/schemas/properties-extension-schema.json");
+		productOfferingPriceCreateVO.setUnknownProperties("policy", Map.of(
+				"@type", List.of("http://www.w3.org/ns/odrl/2/Offer", "http://www.w3.org/ns/odrl/2/Policy"),
+				"@id", "urn:uuid:1b0f3b8a-6c2a-4b6b-9d0a-2f0f6a1a3c4d"));
+
+		HttpResponse<ProductOfferingPriceVO> createResponse = callAndCatch(
+				() -> productOfferingPriceApiTestClient.createProductOfferingPrice(null, productOfferingPriceCreateVO));
+		assertEquals(HttpStatus.CREATED, createResponse.getStatus(), "The product offering price should have been created first.");
+		String productOfferingPriceId = createResponse.body().getId();
+
+		ProductOfferingPriceUpdateVO productOfferingPriceUpdateVO = ProductOfferingPriceUpdateVOTestExample.build().atSchemaLocation(null);
+		productOfferingPriceUpdateVO.setLifecycleStatus("Dead");
+
+		HttpResponse<ProductOfferingPriceVO> updateResponse = callAndCatch(
+				() -> productOfferingPriceApiTestClient.patchProductOfferingPrice(null, productOfferingPriceId,
+						productOfferingPriceUpdateVO));
+		assertEquals(HttpStatus.OK, updateResponse.getStatus(), "The product offering price should have been updated.");
+
+		Map responseAsMap = updateResponse.getBody(Map.class).get();
+		Map<String, Object> policy = (Map<String, Object>) responseAsMap.get("policy");
+		assertEquals(List.of("http://www.w3.org/ns/odrl/2/Offer", "http://www.w3.org/ns/odrl/2/Policy"), policy.get("@type"),
+				"The reserved @type keyword must survive the read-merge-write update untouched.");
+		assertEquals("urn:uuid:1b0f3b8a-6c2a-4b6b-9d0a-2f0f6a1a3c4d", policy.get("@id"),
+				"The reserved @id keyword must survive the read-merge-write update untouched.");
+
+		assertMatchesGolden("product-offering-price-patch-reescape-reserved-words", responseAsMap);
 	}
 
 	private static Stream<Arguments> provideProductOfferingPriceUpdates() {

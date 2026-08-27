@@ -5,11 +5,15 @@ import org.fiware.document.model.DocumentSpecificationCreateVO;
 import org.fiware.document.model.DocumentSpecificationUpdateVO;
 import org.fiware.document.model.DocumentSpecificationVO;
 import org.fiware.document.model.AttachmentRefOrValueVO;
+import org.fiware.document.model.CharacteristicSpecificationVO;
+import org.fiware.document.model.CharacteristicValueSpecificationVO;
 import org.fiware.tmforum.common.domain.AttachmentRefOrValue;
 import org.fiware.tmforum.common.domain.subscription.TMForumSubscription;
 import org.fiware.tmforum.common.mapping.BaseMapper;
 import org.fiware.tmforum.common.mapping.IdHelper;
 import org.fiware.tmforum.documentmanagement.domain.DocumentSpecification;
+import org.fiware.tmforum.service.CharacteristicSpecification;
+import org.fiware.tmforum.service.CharacteristicValueSpecification;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -90,6 +94,20 @@ public abstract class TMForumMapper extends BaseMapper {
             target.setAtSchemaLocation(source.getAtSchemaLocation());
         }
     }
+
+    // CharacteristicSpecification mappings
+
+    @Mapping(target = "id", source = "tmfId")
+    public abstract CharacteristicSpecificationVO map(CharacteristicSpecification characteristicSpecification);
+
+    @Mapping(target = "tmfId", source = "id")
+    public abstract CharacteristicSpecification map(CharacteristicSpecificationVO characteristicSpecificationVO);
+
+    @Mapping(target = "tmfValue", source = "value")
+    public abstract CharacteristicValueSpecification map(CharacteristicValueSpecificationVO characteristicVO);
+
+    @Mapping(target = "value", source = "tmfValue")
+    public abstract CharacteristicValueSpecificationVO map(CharacteristicValueSpecification characteristic);
 
     // URL/URI helper methods
 

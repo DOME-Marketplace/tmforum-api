@@ -1,0 +1,11 @@
+{
+  "description" : "string",
+  "isRoot" : false,
+  "lifecycleStatus" : "Dead",
+  "name" : "string",
+  "version" : "string",
+  "productOffering" : [ ],
+  "subCategory" : [ ],
+  "@baseType" : "string",
+  "@type" : "string"
+}
