@@ -1,8 +1,12 @@
 package org.fiware.tmforum.resourcecatalog;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micronaut.core.type.Argument;
+import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
+import io.micronaut.http.client.HttpClient;
+import io.micronaut.http.client.annotation.Client;
 import io.micronaut.test.annotation.MockBean;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.fiware.ngsi.api.EntitiesApiClient;
@@ -43,6 +47,7 @@ import static org.mockito.Mockito.when;
 public class ResourceSpecificationApiIT extends AbstractApiIT implements ResourceSpecificationApiTestSpec {
 
 	public final ResourceSpecificationApiTestClient resourceSpecificationApiTestClient;
+	private final HttpClient httpClient;
 
 	private String message;
 	private ResourceSpecificationCreateVO resourceSpecificationCreateVO;
@@ -53,9 +58,11 @@ public class ResourceSpecificationApiIT extends AbstractApiIT implements Resourc
 	private Clock clock = mock(Clock.class);
 
 	public ResourceSpecificationApiIT(ResourceSpecificationApiTestClient resourceSpecificationApiTestClient,
-									  EntitiesApiClient entitiesApiClient, ObjectMapper objectMapper, GeneralProperties generalProperties) {
+									  EntitiesApiClient entitiesApiClient, ObjectMapper objectMapper, GeneralProperties generalProperties,
+									  @Client("/") HttpClient httpClient) {
 		super(entitiesApiClient, objectMapper, generalProperties);
 		this.resourceSpecificationApiTestClient = resourceSpecificationApiTestClient;
+		this.httpClient = httpClient;
 	}
 
 	@MockBean(Clock.class)
@@ -537,6 +544,40 @@ public class ResourceSpecificationApiIT extends AbstractApiIT implements Resourc
 		thirdPage.getBody().get().forEach(vo -> pagedIds.add(vo.getId()));
 		assertEquals(totalCount, pagedIds.stream().distinct().count(),
 				"Pages must not overlap or duplicate items across sub-types.");
+	}
+
+	@Test
+	public void listResourceSpecificationByIdOnPolymorphicEndpoint_golden() throws Exception {
+		// Regression test for the id filter forwarding fix: findEntitiesPolymorphic() used to
+		// silently drop the `id` query filter, so a list scoped to a single (sub-)type id would
+		// fan out and return every resourceSpecification instead. Exercised through a raw
+		// HttpClient call since the generated test client only exposes fields/offset/limit - id
+		// filtering is handled server-side by AbstractApiController.list() reading the raw
+		// request via QueryParser.
+		ResourceSpecificationCreateVO baseCreateVO =
+				ResourceSpecificationCreateVOTestExample.build().atSchemaLocation(null);
+		HttpResponse<ResourceSpecificationVO> baseResponse =
+				callAndCatch(() -> resourceSpecificationApiTestClient.createResourceSpecification(null, baseCreateVO));
+		assertEquals(HttpStatus.CREATED, baseResponse.getStatus(), "The base type resourceSpecification should have been created.");
+
+		ResourceSpecificationCreateVO subCreateVO =
+				ResourceSpecificationCreateVOTestExample.build().atSchemaLocation(null);
+		subCreateVO.atType("LogicalResourceSpecification");
+		HttpResponse<ResourceSpecificationVO> subResponse =
+				callAndCatch(() -> resourceSpecificationApiTestClient.createResourceSpecification(null, subCreateVO));
+		assertEquals(HttpStatus.CREATED, subResponse.getStatus(), "The sub-type resourceSpecification should have been created.");
+		String subTypeId = subResponse.body().getId();
+
+		HttpResponse<List<Map>> filteredResponse = httpClient.toBlocking()
+				.exchange(HttpRequest.GET("/resourceSpecification?id=" + subTypeId), Argument.listOf(Map.class));
+
+		assertEquals(HttpStatus.OK, filteredResponse.getStatus(), "The id-filtered list should be accessible.");
+		List<Map> filteredSpecifications = filteredResponse.body();
+		assertEquals(1, filteredSpecifications.size(), "Only the requested id should match the filter.");
+		assertEquals(subTypeId, filteredSpecifications.get(0).get("id"),
+				"The id filter must be forwarded to the polymorphic query, not dropped.");
+
+		assertMatchesGolden("resource-specification-list-filtered-by-id", filteredSpecifications);
 	}
 
 	@Test
