@@ -1,0 +1,23 @@
+[ {
+  "description" : "string",
+  "isBundle" : false,
+  "isSellable" : false,
+  "lifecycleStatus" : "Retired",
+  "name" : "string",
+  "statusReason" : "string",
+  "version" : "string",
+  "agreement" : [ ],
+  "attachment" : [ ],
+  "bundledProductOffering" : [ ],
+  "category" : [ ],
+  "channel" : [ ],
+  "marketSegment" : [ ],
+  "place" : [ ],
+  "prodSpecCharValueUse" : [ ],
+  "productOfferingPrice" : [ ],
+  "productOfferingRelationship" : [ ],
+  "productOfferingTerm" : [ ],
+  "productSpecification" : { },
+  "@baseType" : "string",
+  "@type" : "string"
+} ]

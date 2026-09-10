@@ -1,0 +1,23 @@
+{
+  "brand" : "string",
+  "description" : "string",
+  "isBundle" : false,
+  "lifecycleStatus" : "string",
+  "name" : "string",
+  "productNumber" : "string",
+  "version" : "string",
+  "attachment" : [ ],
+  "bundledProductSpecification" : [ ],
+  "productSpecCharacteristic" : [ ],
+  "productSpecificationRelationship" : [ ],
+  "relatedParty" : [ ],
+  "resourceSpecification" : [ ],
+  "serviceSpecification" : [ ],
+  "targetProductSchema" : {
+    "@schemaLocation" : "my:uri",
+    "@type" : "string"
+  },
+  "validFor" : { },
+  "@baseType" : "string",
+  "@type" : "string"
+}

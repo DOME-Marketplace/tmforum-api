@@ -1,0 +1,18 @@
+[ {
+  "category" : "string",
+  "description" : "string",
+  "isBundle" : false,
+  "lifecycleStatus" : "string",
+  "name" : "string",
+  "version" : "string",
+  "attachment" : [ ],
+  "featureSpecification" : [ ],
+  "resourceSpecCharacteristic" : [ ],
+  "resourceSpecRelationship" : [ ],
+  "targetResourceSchema" : {
+    "@schemaLocation" : "my:uri",
+    "@type" : "string"
+  },
+  "@baseType" : "string",
+  "@type" : "LogicalResourceSpecification"
+} ]

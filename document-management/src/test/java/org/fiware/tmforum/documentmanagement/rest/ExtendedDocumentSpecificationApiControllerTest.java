@@ -78,7 +78,7 @@ class ExtendedDocumentSpecificationApiControllerTest {
         when(tmForumMapper.map(any(DocumentSpecificationCreateVO.class), any())).thenReturn(intermediateVO);
         when(tmForumMapper.map(any(DocumentSpecificationVO.class))).thenReturn(mappedDocSpec);
         when(tmForumMapper.map(any(DocumentSpecification.class))).thenReturn(responseVO);
-        when(s3AttachmentService.offloadAttachments(any(), any())).thenReturn(null);
+        when(s3AttachmentService.offloadAttachments(any(), any())).thenReturn(Mono.empty());
         when(documentSpecificationApiController.getCheckingMono(any())).thenReturn(Mono.just(mappedDocSpec));
         when(repository.createDomainEntity(any())).thenReturn(Mono.empty());
         when(eventHandler.handleCreateEvent(any())).thenReturn(Mono.empty());

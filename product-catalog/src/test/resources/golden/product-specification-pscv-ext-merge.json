@@ -1,0 +1,29 @@
+{
+  "brand" : "string",
+  "description" : "string",
+  "isBundle" : false,
+  "lifecycleStatus" : "string",
+  "name" : "string",
+  "productNumber" : "string",
+  "version" : "string",
+  "attachment" : [ ],
+  "bundledProductSpecification" : [ ],
+  "productSpecCharacteristic" : [ {
+    "name" : "Color",
+    "productSpecCharacteristicValue" : [ {
+      "isDefault" : true,
+      "value" : "Red"
+    } ],
+    "@schemaLocation" : "http://localhost:3000/schemas/properties-extension-schema.json",
+    "cloudesireConfigurationParameterId" : "vendor-abc-123"
+  }, {
+    "name" : "Size",
+    "@schemaLocation" : "http://localhost:3000/schemas/properties-extension-schema.json",
+    "cloudesireConfigurationParameterId" : "vendor-xyz-999"
+  } ],
+  "productSpecificationRelationship" : [ ],
+  "resourceSpecification" : [ ],
+  "serviceSpecification" : [ ],
+  "@baseType" : "string",
+  "@type" : "string"
+}

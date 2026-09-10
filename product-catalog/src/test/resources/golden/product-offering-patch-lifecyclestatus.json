@@ -1,0 +1,22 @@
+{
+  "description" : "string",
+  "isBundle" : false,
+  "isSellable" : false,
+  "lifecycleStatus" : "Dead",
+  "name" : "string",
+  "statusReason" : "string",
+  "version" : "string",
+  "agreement" : [ ],
+  "attachment" : [ ],
+  "bundledProductOffering" : [ ],
+  "category" : [ ],
+  "channel" : [ ],
+  "marketSegment" : [ ],
+  "place" : [ ],
+  "prodSpecCharValueUse" : [ ],
+  "productOfferingPrice" : [ ],
+  "productOfferingRelationship" : [ ],
+  "productOfferingTerm" : [ ],
+  "@baseType" : "string",
+  "@type" : "string"
+}

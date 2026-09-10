@@ -92,6 +92,19 @@ public class CatalogApiIT extends AbstractApiIT implements CatalogApiTestSpec {
 		assertEquals(expectedAsMap, responseAsMap, message);
 	}
 
+	@Test
+	public void createCatalog201_golden() throws Exception {
+		CatalogCreateVO catalogCreateVO = CatalogCreateVOTestExample.build().atSchemaLocation(null);
+		catalogCreateVO.setAtSchemaLocation(null);
+
+		HttpResponse<CatalogVO> catalogVOHttpResponse = callAndCatch(
+				() -> catalogApiTestClient.createCatalog(null, catalogCreateVO));
+		assertEquals(HttpStatus.CREATED, catalogVOHttpResponse.getStatus(), "The catalog should have been created.");
+
+		Map responseAsMap = catalogVOHttpResponse.getBody(Map.class).get();
+		assertMatchesGolden("catalog-create-empty", responseAsMap);
+	}
+
 	private static Stream<Arguments> provideValidCatalogs() {
 		List<Arguments> testEntries = new ArrayList<>();
 
@@ -441,6 +454,26 @@ public class CatalogApiIT extends AbstractApiIT implements CatalogApiTestSpec {
 		expectedCatalog.setLastUpdate(updatedCatalog.getLastUpdate());
 
 		assertEquals(expectedCatalog, updatedCatalog, message);
+	}
+
+	@Test
+	public void patchCatalog200_golden() throws Exception {
+		CatalogCreateVO catalogCreateVO = CatalogCreateVOTestExample.build().atSchemaLocation(null);
+		HttpResponse<CatalogVO> createResponse = callAndCatch(
+				() -> catalogApiTestClient.createCatalog(null, catalogCreateVO));
+		assertEquals(HttpStatus.CREATED, createResponse.getStatus(), "The catalog should have been created first.");
+
+		String catalogId = createResponse.body().getId();
+
+		CatalogUpdateVO catalogUpdateVO = CatalogUpdateVOTestExample.build().atSchemaLocation(null);
+		catalogUpdateVO.setCatalogType("New-Type");
+
+		HttpResponse<CatalogVO> updateResponse = callAndCatch(
+				() -> catalogApiTestClient.patchCatalog(null, catalogId, catalogUpdateVO));
+		assertEquals(HttpStatus.OK, updateResponse.getStatus(), "The catalog should have been updated.");
+
+		Map responseAsMap = updateResponse.getBody(Map.class).get();
+		assertMatchesGolden("catalog-patch-type", responseAsMap);
 	}
 
 	private static Stream<Arguments> provideCatalogUpdates() {

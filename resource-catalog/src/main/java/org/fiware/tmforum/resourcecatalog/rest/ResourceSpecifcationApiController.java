@@ -77,9 +77,8 @@ public class ResourceSpecifcationApiController extends AbstractApiController<Res
 		}
 
 		String atType = resourceSpecificationCreateVO.getAtType();
-		String entityType = ResourceTypeRegistry.getSpecEntityType(atType);
-
-		if (ResourceTypeRegistry.SPEC_TYPES.containsKey(atType)) {
+		if (atType != null && ResourceTypeRegistry.SPEC_TYPES.containsKey(atType)) {
+			String entityType = ResourceTypeRegistry.getSpecEntityType(atType);
 			return createSubTypeSpec(resourceSpecificationCreateVO, entityType, atType);
 		}
 

@@ -22,6 +22,7 @@ import org.fiware.tmforum.resourceinventory.TMForumMapper;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.time.Clock;
 import java.util.*;
 
 /**
@@ -41,22 +42,36 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 
 	private final TMForumMapper tmForumMapper;
 	private final ObjectMapper objectMapper;
+	private final Clock clock;
 
 	public ResourceApiController(QueryParser queryParser, ReferenceValidationService validationService,
 			TmForumRepository resourceInventoryRepository,
 			TMForumMapper tmForumMapper, TMForumEventHandler eventHandler,
-			ObjectMapper objectMapper) {
+			ObjectMapper objectMapper, Clock clock) {
 		super(queryParser, validationService, resourceInventoryRepository, eventHandler);
 		this.tmForumMapper = tmForumMapper;
 		this.objectMapper = objectMapper;
+		this.clock = clock;
+	}
+
+	/**
+	 * Stamp {@code lastUpdate} on Resource sub-types that declare the field per
+	 * TMF730 / TMF639 spec ({@link SoftwareResource} and its descendants
+	 * {@link ApiResource}, {@link InstalledSoftware}). Other Resource sub-types
+	 * don't declare {@code lastUpdate}, so the guard is a no-op for them — TMF
+	 * spec is preserved exactly.
+	 */
+	private void stampLastUpdate(Resource resource) {
+		if (resource instanceof SoftwareResource sr) {
+			sr.setLastUpdate(clock.instant());
+		}
 	}
 
 	@Override
 	public Mono<HttpResponse<ResourceVO>> createResource(@NonNull ResourceCreateVO resourceCreateVO) {
 		String atType = resourceCreateVO.getAtType();
-		String entityType = ResourceTypeRegistry.getResourceEntityType(atType);
-
-		if (ResourceTypeRegistry.RESOURCE_TYPES.containsKey(atType)) {
+		if (atType != null && ResourceTypeRegistry.RESOURCE_TYPES.containsKey(atType)) {
+			String entityType = ResourceTypeRegistry.getResourceEntityType(atType);
 			return createSubTypeResource(resourceCreateVO, entityType, atType);
 		}
 
@@ -66,6 +81,7 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 						IdHelper.toNgsiLd(UUID.randomUUID().toString(), Resource.TYPE_RESOURCE)));
 
 		validateInternalRefs(resource);
+		stampLastUpdate(resource);
 
 		return create(getCheckingMono(resource), Resource.class)
 				.map(tmForumMapper::map)
@@ -80,6 +96,7 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 
 		Resource resource = convertCreateVOToDomain(createVO, id, domainClass);
 		validateInternalRefs(resource);
+		stampLastUpdate(resource);
 
 		return create(getCheckingMono(resource), Resource.class)
 				.map(this::mapResourceToVO)
@@ -186,7 +203,7 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 
 	protected void validateInternalRefs(Resource resource) {
 		if (resource.getNote() != null) {
-			List<URI> noteIds = resource.getNote().stream().map(Note::getTmfId).toList();
+			List<URI> noteIds = resource.getNote().stream().map(Note::getTmfId).filter(Objects::nonNull).toList();
 			if (noteIds.size() != new HashSet<>(noteIds).size()) {
 				throw new TmForumException(
 						String.format("Duplicate note ids are not allowed: %s", noteIds),
@@ -205,6 +222,7 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 		List<String> charIds = characteristics
 				.stream()
 				.map(Characteristic::getTmfId)
+				.filter(Objects::nonNull)
 				.toList();
 		if (charIds.size() != new HashSet<>(charIds).size()) {
 			throw new TmForumException(
@@ -289,6 +307,7 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 
 		Resource resource = tmForumMapper.map(resourceUpdateVO, id);
 		validateInternalRefs(resource);
+		stampLastUpdate(resource);
 
 		return patch(id, resource, getCheckingMono(resource), Resource.class)
 				.map(tmForumMapper::map)
@@ -305,6 +324,7 @@ public class ResourceApiController extends AbstractApiController<Resource> imple
 		Object subTypeVO = objectMapper.convertValue(map, getVOClass(entityClass));
 		Resource resource = mapVOToDomain(subTypeVO, entityClass);
 		validateInternalRefs(resource);
+		stampLastUpdate(resource);
 
 		URI idUri = URI.create(id);
 		return repository.get(idUri, entityClass)
