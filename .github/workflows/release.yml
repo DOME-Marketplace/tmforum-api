@@ -7,6 +7,11 @@ on:
       - main-sbx
       - main-dev2
       - main-prd
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Exact version to build&release (e.g. sbx_1.9.1). Skips the automatic tag-lookup/bump - use for isolated hotfixes on a branch that does not merge into main-sbx."
+        required: true
 
 env:
   REGISTRY: docker.io
@@ -51,12 +56,14 @@ jobs:
           esac
 
       - id: pr
+        if: github.event_name == 'push'
         uses: actions-ecosystem/action-get-merged-pull-request@v1.0.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Find latest tag with prefix
         id: latest_tag
+        if: github.event_name == 'push'
         run: |
           PREFIX="${{ steps.branch.outputs.prefix }}"
           git fetch --tags
@@ -80,6 +87,7 @@ jobs:
 
       - name: Bump version
         id: bump
+        if: github.event_name == 'push'
         run: |
           VERSION="${{ steps.latest_tag.outputs.version }}"
           LABELS="${{ steps.pr.outputs.labels }}"
@@ -104,7 +112,12 @@ jobs:
 
       - name: Set version output
         id: out
-        run: echo "version=${{ steps.branch.outputs.prefix }}${{ steps.bump.outputs.version }}" >> $GITHUB_OUTPUT
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ steps.branch.outputs.prefix }}${{ steps.bump.outputs.version }}" >> $GITHUB_OUTPUT
+          fi
 
   # image build&push
   tmforum-apis:
