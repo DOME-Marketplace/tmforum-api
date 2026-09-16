@@ -237,11 +237,16 @@ public class QueryParser {
         // Instead, distribute using top-level NGSI-LD OR (|):
         //   base;attr=="v1"|base;attr=="v2"
         // Since NGSI-LD ; binds tighter than |, this correctly means (base AND v1) OR (base AND v2).
+        // Only done when generalProperties.getSplitOrValues() is true (Scorpio 5) - the split itself
+        // triggers a separate Scorpio bug where type= isn't applied to every | branch, so brokers that
+        // support the native valueList format directly (Scorpio 6+) should disable it.
         String query;
         if (logicalOperator == LogicalOperator.AND) {
-            List<ResolvedCondition> orValueConditions = remainingConditions.stream()
-                    .filter(rc -> rc.queryPart.value().contains(TMFORUM_OR_VALUE))
-                    .toList();
+            List<ResolvedCondition> orValueConditions = generalProperties.getSplitOrValues()
+                    ? remainingConditions.stream()
+                            .filter(rc -> rc.queryPart.value().contains(TMFORUM_OR_VALUE))
+                            .toList()
+                    : List.of();
 
             if (!orValueConditions.isEmpty()) {
                 List<ResolvedCondition> regularConditions = remainingConditions.stream()
