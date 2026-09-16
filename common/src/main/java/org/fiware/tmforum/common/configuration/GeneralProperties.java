@@ -77,4 +77,15 @@ public class GeneralProperties {
 	 * exact next/last, status always 200).
 	 */
 	private String countHeader = "NGSILD-Results-Count";
+
+	/**
+	 * Whether to split an AND query with an OR-value condition (e.g. {@code lifecycleStatus=Active,Launched})
+	 * into a top-level NGSI-LD OR ({@code |}) of per-value branches, instead of sending the native
+	 * {@code attr==(v1,v2)} valueList syntax. Required as a workaround for Scorpio 5, which does not
+	 * support the valueList format combined with an AND condition. Scorpio 6 supports the valueList
+	 * format directly, and should set this to false - the split triggers a separate, still-unfixed
+	 * Scorpio bug where the {@code type=} URL parameter is not applied to every {@code |} branch,
+	 * letting entities of other types leak into both the result and the reported total count.
+	 */
+	private Boolean splitOrValues = true;
 }
