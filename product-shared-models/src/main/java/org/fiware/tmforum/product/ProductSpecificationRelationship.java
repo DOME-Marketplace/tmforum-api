@@ -46,8 +46,11 @@ public class ProductSpecificationRelationship extends RefEntity {
     @DatasetId
     public URI getDatasetId() {
         String relType = Optional.ofNullable(getRelationshipType()).orElse("type");
+        // relationshipType alone is not enough to disambiguate two relationships pointing at the
+        // same target spec (DOME#83519) - name is the field callers actually vary in that case.
+        String name = Optional.ofNullable(getName()).orElse("");
 
-        return URI.create(String.format("%s:%s", getId().toString(), relType));
+        return URI.create(String.format("%s:%s:%s", getId().toString(), relType, name));
     }
 
     @Override
