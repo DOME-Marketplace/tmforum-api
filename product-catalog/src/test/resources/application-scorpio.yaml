@@ -3,3 +3,4 @@ general:
   ngsildOrQueryKey: ","
   encloseQuery: false
   countHeader: NGSILD-Results-Count
+  splitOrValues: false
