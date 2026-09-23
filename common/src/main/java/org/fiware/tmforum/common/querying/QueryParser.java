@@ -19,6 +19,7 @@ import javax.smartcardio.ATR;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -105,6 +106,18 @@ public class QueryParser {
      */
     private static final Pattern NUMBER_LITERAL_PATTERN =
             Pattern.compile("-?(0|[1-9]\\d*)(\\.\\d+)?([eE][-+]?\\d+)?");
+
+    // NGSI-LD's native "not equal" operator, used to rewrite the `.regex` "not equal" idiom below
+    private static final String NGSI_LD_NOT_EQUALS = "!=";
+
+    /**
+     * Idiom used to express "not equal to X" via a negative-lookahead regex: {@code ^(?!X$).*$}. When
+     * {@link GeneralProperties#isOptimizeRegexNotEquals()} is enabled, a {@code .regex} filter matching
+     * this idiom is rewritten to NGSI-LD's native {@code !=} instead of forwarding a broker-side pattern
+     * match, since not every broker's regex engine supports lookahead (e.g. Scorpio's PostgreSQL-backed
+     * POSIX regex doesn't).
+     */
+    private static final Pattern NOT_EQUALS_REGEX_IDIOM = Pattern.compile("^\\^\\(\\?!(.+?)\\$\\)\\.\\*\\$$");
 
     // NGSI-LD's orderBy suffixes a field with ";desc" to sort descending; omitting it means ascending
     private static final String ORDER_BY_DESCENDING_SUFFIX = ";desc";
@@ -267,20 +280,23 @@ public class QueryParser {
         // support the native valueList format directly (Scorpio 6+) should disable it.
         String query;
         if (logicalOperator == LogicalOperator.AND) {
+            // a regex pattern may legitimately contain a "," - it must not be split into OR'd values
             List<ResolvedCondition> orValueConditions = generalProperties.getSplitOrValues()
                     ? remainingConditions.stream()
-                            .filter(rc -> rc.queryPart.value().contains(TMFORUM_OR_VALUE))
+                            .filter(rc -> !rc.queryPart.operator().equals(REGEX.getNgsiLdOperator())
+                                    && rc.queryPart.value().contains(TMFORUM_OR_VALUE))
                             .toList()
                     : List.of();
 
             if (!orValueConditions.isEmpty()) {
                 List<ResolvedCondition> regularConditions = remainingConditions.stream()
-                        .filter(rc -> !rc.queryPart.value().contains(TMFORUM_OR_VALUE))
+                        .filter(rc -> !orValueConditions.contains(rc))
                         .toList();
 
                 String baseQuery = regularConditions.stream()
                         .map(rc -> toQueryString(
-                                getQueryPart(copyAttribute(rc.attribute), rc.queryPart, isRelationship(queryClass, rc.attribute)),
+                                applyRegexNotEqualsOptimization(
+                                        getQueryPart(copyAttribute(rc.attribute), rc.queryPart, isRelationship(queryClass, rc.attribute))),
                                 rc.attribute.type()))
                         .collect(Collectors.joining(NGSI_LD_AND));
 
@@ -288,9 +304,9 @@ public class QueryParser {
                 List<List<String>> orGroups = orValueConditions.stream()
                         .map(rc -> Arrays.stream(rc.queryPart.value().split(TMFORUM_OR_VALUE))
                                 .map(v -> toQueryString(
-                                        getQueryPart(copyAttribute(rc.attribute),
+                                        applyRegexNotEqualsOptimization(getQueryPart(copyAttribute(rc.attribute),
                                                 new QueryPart(rc.queryPart.attribute(), rc.queryPart.operator(), v),
-                                                isRelationship(queryClass, rc.attribute)),
+                                                isRelationship(queryClass, rc.attribute))),
                                         rc.attribute.type()))
                                 .collect(Collectors.toList()))
                         .collect(Collectors.toList());
@@ -307,7 +323,8 @@ public class QueryParser {
             } else {
                 query = remainingConditions.stream()
                         .map(rc -> toQueryString(
-                                getQueryPart(rc.attribute, rc.queryPart, isRelationship(queryClass, rc.attribute)),
+                                applyRegexNotEqualsOptimization(
+                                        getQueryPart(rc.attribute, rc.queryPart, isRelationship(queryClass, rc.attribute))),
                                 rc.attribute.type()))
                         .collect(Collectors.joining(NGSI_LD_AND));
             }
@@ -315,7 +332,8 @@ public class QueryParser {
             String ngsidOrKey = generalProperties.getNgsildOrQueryKey();
             query = remainingConditions.stream()
                     .map(rc -> toQueryString(
-                            getQueryPart(rc.attribute, rc.queryPart, isRelationship(queryClass, rc.attribute)),
+                            applyRegexNotEqualsOptimization(
+                                    getQueryPart(rc.attribute, rc.queryPart, isRelationship(queryClass, rc.attribute))),
                             rc.attribute.type()))
                     .collect(Collectors.joining(ngsidOrKey));
         }
@@ -416,6 +434,25 @@ public class QueryParser {
                 qp.value());
     }
 
+    /**
+     * When {@code queryPart} came from a {@code .regex} filter whose value matches the "not equal"
+     * idiom {@code ^(?!X$).*$}, rewrites it to NGSI-LD's native {@code !=} comparison instead of the
+     * pattern-match operator {@code ~=}. Controlled by {@link GeneralProperties#isOptimizeRegexNotEquals()}.
+     *
+     * @param queryPart the query part to (maybe) rewrite
+     * @return the rewritten query part, or the original one unchanged if it doesn't apply
+     */
+    private QueryPart applyRegexNotEqualsOptimization(QueryPart queryPart) {
+        if (!queryPart.operator().equals(REGEX.getNgsiLdOperator()) || !generalProperties.isOptimizeRegexNotEquals()) {
+            return queryPart;
+        }
+        Matcher matcher = NOT_EQUALS_REGEX_IDIOM.matcher(queryPart.value());
+        if (!matcher.matches()) {
+            return queryPart;
+        }
+        return new QueryPart(queryPart.attribute(), NGSI_LD_NOT_EQUALS, matcher.group(1));
+    }
+
     private String mapPathPart(String part) {
         if (generalProperties.getUseDotSeperator()) {
             return "." + part;
@@ -437,6 +474,10 @@ public class QueryParser {
         if (queryAttributeType == QueryAttributeType.BOOLEAN
                 && ORDERING_OPERATORS.contains(queryPart.operator())) {
             throw new QueryException(String.format("%s cannot be compared with %s, it is a boolean attribute.",
+                    queryPart.attribute(), queryPart.operator()));
+        }
+        if (queryPart.operator().equals(REGEX.getNgsiLdOperator()) && queryAttributeType != QueryAttributeType.STRING) {
+            throw new QueryException(String.format("%s cannot be compared with %s, regex only applies to string attributes.",
                     queryPart.attribute(), queryPart.operator()));
         }
     }
@@ -531,7 +572,9 @@ public class QueryParser {
 
         validateOperator(queryPart, queryAttributeType);
 
-        if (queryPart.value().contains(TMFORUM_OR_VALUE)) {
+        // a regex pattern may legitimately contain a "," - it must not be split into OR'd values
+        boolean isRegex = queryPart.operator().equals(REGEX.getNgsiLdOperator());
+        if (!isRegex && queryPart.value().contains(TMFORUM_OR_VALUE)) {
             String theQuery = "";
             List<String> encodedValues = new ArrayList<>(Arrays.stream(queryPart.value().split(TMFORUM_OR_VALUE))
                     .map(v -> encodeValue(queryPart.attribute(), v, queryAttributeType))
@@ -560,12 +603,19 @@ public class QueryParser {
             return theQuery;
         }
 
+        // a regex pattern is opaque - it must not go through encodeStringValue's own OR/AND splitting
+        if (isRegex) {
+            return String.format("%s%s\"%s\"", queryPart.attribute(), queryPart.operator(), queryPart.value());
+        }
+
         return String.format("%s%s%s", queryPart.attribute(), queryPart.operator(),
                 encodeValue(queryPart.attribute(), queryPart.value(), queryAttributeType));
     }
 
     private QueryPart paramsToQueryPart(String parameter, Operator operator) {
-        String[] parameterParts = parameter.split(operator.getTmForumOperator().operator());
+        // the operator symbol is split on literally - some symbols (e.g. REGEX's "*=") are not
+        // valid regexes on their own and would otherwise throw a PatternSyntaxException
+        String[] parameterParts = parameter.split(Pattern.quote(operator.getTmForumOperator().operator()));
         if (parameterParts.length != 2) {
             throw new QueryException(String.format("%s is not a valid %s parameter.",
                     parameter,
