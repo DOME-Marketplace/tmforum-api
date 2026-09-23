@@ -88,4 +88,13 @@ public class GeneralProperties {
 	 * letting entities of other types leak into both the result and the reported total count.
 	 */
 	private Boolean splitOrValues = true;
+
+	/**
+	 * Whether values that would otherwise contain NGSI-LD's optional "Forbidden Characters"
+	 * ({@code < > " ' = ; ( )}, ETSI GS CIM 009 clause 4.6.4) are escaped before being sent to the
+	 * broker (and unescaped when read back). Rejecting those characters is optional per spec -
+	 * Orion-LD/Scorpio don't enforce it, some brokers do. Default true; set to false for a broker
+	 * (or existing data) that expects the plain, unescaped value.
+	 */
+	private boolean escapeForbiddenCharacters = true;
 }
