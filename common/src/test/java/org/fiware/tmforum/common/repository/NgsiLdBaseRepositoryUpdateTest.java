@@ -2,6 +2,8 @@ package org.fiware.tmforum.common.repository;
 
 import io.github.wistefan.mapping.JavaObjectMapper;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
+import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import org.fiware.ngsi.api.EntitiesApiClient;
 import org.fiware.ngsi.model.BatchOperationResultVO;
 import org.fiware.ngsi.model.EntityListVO;
@@ -9,6 +11,7 @@ import org.fiware.ngsi.model.EntityVO;
 import org.fiware.ngsi.model.PropertyListVO;
 import org.fiware.ngsi.model.PropertyVO;
 import org.fiware.tmforum.common.configuration.GeneralProperties;
+import org.fiware.tmforum.common.exception.NgsiLdRepositoryException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,6 +24,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -147,6 +151,89 @@ class NgsiLdBaseRepositoryUpdateTest {
 		assertEquals("2026-08-05T10:15:30Z",
 				((PropertyVO) written.getAdditionalProperties().get("lastUpdate")).getValue(),
 				"The update still has to be merged on top of the existing entity.");
+	}
+
+	@Test
+	public void anEntityFromBeforeEveryListHadADatasetIdCanBeUpdated() {
+		// relatedParty of the old offerings: two instances, none with a datasetId. Scorpio 6 refuses to write
+		// that back, so the update used to be lost without an error.
+		EntityVO existing = anEntity();
+		PropertyListVO relatedParty = new PropertyListVO();
+		relatedParty.add(aProperty(Map.of("role", "Seller")));
+		relatedParty.add(aProperty(Map.of("role", "SellerOperator")));
+		existing.setAdditionalProperties("relatedParty", relatedParty);
+		mockRetrieval(existing);
+
+		repository.updateDomainEntity(ENTITY_ID, new Object()).block();
+
+		PropertyListVO written = (PropertyListVO) writtenEntity().getAdditionalProperties().get("relatedParty");
+		assertEquals(URI.create("urn:ngsi-ld:dataset:list-item:0"), written.get(0).getDatasetId());
+		assertEquals(URI.create("urn:ngsi-ld:dataset:list-item:1"), written.get(1).getDatasetId());
+		assertEquals("2026-08-05T10:15:30Z",
+				((PropertyVO) writtenEntity().getAdditionalProperties().get("lastUpdate")).getValue(),
+				"The change itself is written together with the repair.");
+	}
+
+	@Test
+	public void validListsAreWrittenBackUntouched() {
+		EntityVO existing = anEntity();
+		PropertyListVO terms = new PropertyListVO();
+		PropertyVO first = aProperty("a");
+		first.setDatasetId(URI.create("urn:uuid:first"));
+		PropertyVO second = aProperty("b");
+		second.setDatasetId(URI.create("urn:uuid:second"));
+		terms.add(first);
+		terms.add(second);
+		existing.setAdditionalProperties("productOfferingTerm", terms);
+		mockRetrieval(existing);
+
+		repository.updateDomainEntity(ENTITY_ID, new Object()).block();
+
+		PropertyListVO written = (PropertyListVO) writtenEntity().getAdditionalProperties().get("productOfferingTerm");
+		assertEquals(URI.create("urn:uuid:first"), written.get(0).getDatasetId());
+		assertEquals(URI.create("urn:uuid:second"), written.get(1).getDatasetId());
+	}
+
+	@Test
+	public void aMultiStatusAnswerIsAFailureAndNotASuccess() {
+		// Scorpio answers 207 with the reason in the body when it did not write the entity.
+		EntityVO existing = anEntity();
+		mockRetrieval(existing);
+		when(entitiesApi.batchEntityUpsert(any(), any()))
+				.thenReturn(Mono.just(HttpResponse.<BatchOperationResultVO>status(HttpStatus.MULTI_STATUS)
+						.body(new BatchOperationResultVO())));
+
+		NgsiLdRepositoryException exception = assertThrows(NgsiLdRepositoryException.class,
+				() -> repository.updateDomainEntity(ENTITY_ID, new Object()).block());
+
+		assertTrue(exception.getMessage().contains(ENTITY_ID), "The message names the entity: " + exception.getMessage());
+	}
+
+	@Test
+	public void aMultiStatusErrorRaisedByTheClientIsAFailureWithTheBrokerReason() {
+		EntityVO existing = anEntity();
+		mockRetrieval(existing);
+		String reason = "{\"errors\":[{\"error\":{\"detail\":\"Duplicated datasetId or multiple entries with no datasetId found\"}}]}";
+		HttpResponse<Object> response = HttpResponse.status(HttpStatus.MULTI_STATUS).body(reason);
+		when(entitiesApi.batchEntityUpsert(any(), any()))
+				.thenReturn(Mono.error(new HttpClientResponseException("Multi-Status", response)));
+
+		NgsiLdRepositoryException exception = assertThrows(NgsiLdRepositoryException.class,
+				() -> repository.updateDomainEntity(ENTITY_ID, new Object()).block());
+
+		assertTrue(exception.getMessage().contains("Duplicated datasetId"),
+				"The reason of the broker is kept: " + exception.getMessage());
+	}
+
+	@Test
+	public void otherSuccessfulStatusesAreStillSuccess() {
+		EntityVO existing = anEntity();
+		mockRetrieval(existing);
+		when(entitiesApi.batchEntityUpsert(any(), any()))
+				.thenReturn(Mono.error(new HttpClientResponseException("No Content",
+						HttpResponse.status(HttpStatus.NO_CONTENT))));
+
+		repository.updateDomainEntity(ENTITY_ID, new Object()).block();
 	}
 
 	private EntityVO anEntity() {

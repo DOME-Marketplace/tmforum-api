@@ -271,10 +271,10 @@
 
     <profiles>
         <profile>
-            <id>skip-minio</id>
+            <id>skip-s3-local</id>
             <activation>
                 <property>
-                    <name>skipMinio</name>
+                    <name>skipS3Local</name>
                     <value>true</value>
                 </property>
             </activation>
