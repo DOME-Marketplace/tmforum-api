@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.fiware.ngsi.api.EntitiesApiClient;
 import org.fiware.ngsi.api.SubscriptionsApiClient;
 import org.fiware.ngsi.model.AdditionalPropertyVO;
+import org.fiware.ngsi.model.BatchOperationResultVO;
 import org.fiware.ngsi.model.EntityFragmentVO;
 import org.fiware.ngsi.model.EntityListVO;
 import org.fiware.ngsi.model.EntityVO;
@@ -130,16 +131,41 @@ public abstract class NgsiLdBaseRepository {
 		EntityListVO entityListVO = new EntityListVO();
 		entityListVO.add(entityVO);
 		return entitiesApi.batchEntityUpsert(entityListVO, "replace")
-				.then()
+				.flatMap(response -> response.getStatus() == HttpStatus.MULTI_STATUS
+						? Mono.<Void>error(upsertRejected(entityId, describe(response)))
+						: Mono.<Void>empty())
 				.onErrorResume(HttpClientResponseException.class, e -> {
-					// Scorpio 6.x may return 204/207 instead of 200; Micronaut treats status
-					// mismatch as an error even for 2xx responses. Accept any 2xx as success.
+					// 207 is how the broker reports that it did not write the entity (e.g. Scorpio 6 refusing
+					// several instances of an attribute without datasetId): the failure is only in the body.
+					if (e.getStatus() == HttpStatus.MULTI_STATUS) {
+						return Mono.error(upsertRejected(entityId, describe(e)));
+					}
+					// Scorpio 6.x may return 204 instead of 200; Micronaut treats status
+					// mismatch as an error even for 2xx responses. Accept any other 2xx as success.
 					if (e.getStatus().getCode() >= 200 && e.getStatus().getCode() < 300) {
 						return Mono.empty();
 					}
 					return Mono.error(new NgsiLdRepositoryException(
 							"Was not able to replace entity via batch upsert.", Optional.of(e)));
 				});
+	}
+
+	private NgsiLdRepositoryException upsertRejected(URI entityId, String reason) {
+		return new NgsiLdRepositoryException(
+				String.format("The broker did not replace entity %s: %s", entityId, reason), Optional.empty());
+	}
+
+	private String describe(HttpResponse<BatchOperationResultVO> response) {
+		// the generated result type names its list "error" while brokers answer "errors", so the typed
+		// body can come back empty - the status already says that the entity was not written.
+		return response.getBody()
+				.filter(result -> result.getError() != null && !result.getError().isEmpty())
+				.map(result -> result.getError().toString())
+				.orElse("answered 207 Multi-Status without further detail.");
+	}
+
+	private String describe(HttpClientResponseException exception) {
+		return exception.getResponse().getBody(String.class).orElse(exception.getMessage());
 	}
 
 	/**
@@ -212,6 +238,8 @@ public abstract class NgsiLdBaseRepository {
 		if (update.getOperationSpace() != null) existing.setOperationSpace(update.getOperationSpace());
 		if (update.getModifiedAt() != null) existing.setModifiedAt(update.getModifiedAt());
 		if (update.getAtContext() != null) existing.setAtContext(update.getAtContext());
+		// entities written before every list got a datasetId would be refused by Scorpio 6 on this very write
+		MultiAttributeDatasetIds.repair(existing);
 		return existing;
 	}
 

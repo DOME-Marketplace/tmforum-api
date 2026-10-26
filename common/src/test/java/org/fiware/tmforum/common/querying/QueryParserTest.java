@@ -65,7 +65,7 @@ class QueryParserTest {
 	private static Stream<Arguments> queriesAttributeIncluded() {
 		return Stream.of(
 				// Property attributes queries
-				Arguments.of("status=Active,Started&color=Red", new QueryParams(null, null, "color==\"Red\";status==\"Active\"|color==\"Red\";status==\"Started\"", Map.of()), MyPojo.class),
+				Arguments.of("status=Active,Started&color=Red", new QueryParams(null, null, "(color==\"Red\";status==\"Active\")|(color==\"Red\";status==\"Started\")", Map.of()), MyPojo.class),
 				Arguments.of("status=Active,Started;color=Red", new QueryParams(null, null, "color==\"Red\"|(status==\"Active\"|status==\"Started\")", Map.of()), MyPojo.class),
 				Arguments.of("status=Active;status=Started", new QueryParams(null, null, "(status==\"Active\"|status==\"Started\")", Map.of()), MyPojo.class),
 				Arguments.of("status=Active;status=Started;color=Red", new QueryParams(null, null, "color==\"Red\"|(status==\"Active\"|status==\"Started\")", Map.of()),
@@ -77,7 +77,7 @@ class QueryParserTest {
 				Arguments.of("temperature<20&temperature>10", new QueryParams(null, null, "temperature<20;temperature>10", Map.of()), MyPojo.class),
 				Arguments.of("temperature<=20;temperature=30", new QueryParams(null, null, "temperature==30|temperature<=20", Map.of()), MyPojo.class),
 				Arguments.of("temperature>=20;temperature<3", new QueryParams(null, null, "temperature<3|temperature>=20", Map.of()), MyPojo.class),
-				Arguments.of("status.eq=Active,Started&color.eq=Red", new QueryParams(null, null, "color==\"Red\";status==\"Active\"|color==\"Red\";status==\"Started\"", Map.of()),
+				Arguments.of("status.eq=Active,Started&color.eq=Red", new QueryParams(null, null, "(color==\"Red\";status==\"Active\")|(color==\"Red\";status==\"Started\")", Map.of()),
 						MyPojo.class),
 				Arguments.of("status.eq=Active,Started;color.eq=Red", new QueryParams(null, null, "color==\"Red\"|(status==\"Active\"|status==\"Started\")", Map.of()),
 						MyPojo.class),
@@ -104,7 +104,7 @@ class QueryParserTest {
 	private static Stream<Arguments> queriesAttributeNotIncluded() {
 		return Stream.of(
 				// Property attributes queries
-				Arguments.of("status=Active,Started&color=Red", new QueryParams(null, null, "color==\"Red\";status==\"Active\"|color==\"Red\";status==\"Started\"", Map.of()), MyPojo.class),
+				Arguments.of("status=Active,Started&color=Red", new QueryParams(null, null, "(color==\"Red\";status==\"Active\")|(color==\"Red\";status==\"Started\")", Map.of()), MyPojo.class),
 				Arguments.of("status=Active,Started;color=Red", new QueryParams(null, null, "color==\"Red\"|status==(\"Active\"|\"Started\")", Map.of()), MyPojo.class),
 				Arguments.of("status=Active;status=Started", new QueryParams(null, null, "status==(\"Active\"|\"Started\")", Map.of()), MyPojo.class),
 				Arguments.of("status=Active;status=Started;color=Red", new QueryParams(null, null, "color==\"Red\"|status==(\"Active\"|\"Started\")", Map.of()),
@@ -116,7 +116,7 @@ class QueryParserTest {
 				Arguments.of("temperature<20&temperature>10", new QueryParams(null, null, "temperature<20;temperature>10", Map.of()), MyPojo.class),
 				Arguments.of("temperature<=20;temperature=30", new QueryParams(null, null, "temperature==30|temperature<=20", Map.of()), MyPojo.class),
 				Arguments.of("temperature>=20;temperature<3", new QueryParams(null, null, "temperature<3|temperature>=20", Map.of()), MyPojo.class),
-				Arguments.of("status.eq=Active,Started&color.eq=Red", new QueryParams(null, null, "color==\"Red\";status==\"Active\"|color==\"Red\";status==\"Started\"", Map.of()),
+				Arguments.of("status.eq=Active,Started&color.eq=Red", new QueryParams(null, null, "(color==\"Red\";status==\"Active\")|(color==\"Red\";status==\"Started\")", Map.of()),
 						MyPojo.class),
 				Arguments.of("status.eq=Active,Started;color.eq=Red", new QueryParams(null, null, "color==\"Red\"|status==(\"Active\"|\"Started\")", Map.of()),
 						MyPojo.class),
@@ -139,6 +139,33 @@ class QueryParserTest {
 		);
 	}
 
+	@Test
+	public void orValuesCombinedWithAndAreBracketedPerBranchOnlyWhenTheQueryIsEnclosed() {
+		// Orion-LD rejects AND and OR mixed without brackets ("mixed AND/OR operators"), so every branch that
+		// mixes both gets its own. Without encloseQuery the query keeps its previous shape.
+		GeneralProperties enclosed = new GeneralProperties();
+		enclosed.setNgsildOrQueryKey(";");
+		enclosed.setNgsildOrQueryValue(";");
+		enclosed.setEncloseQuery(true);
+		enclosed.setIncludeAttributeInList(false);
+		enclosed.setUseDotSeperator(false);
+		assertEquals("(color==\"Red\";status==\"Active\")|(color==\"Red\";status==\"Started\")",
+				new QueryParser(enclosed).toNgsiLdQuery(MyPojo.class, "status=Active,Started&color=Red").query());
+
+		GeneralProperties plain = new GeneralProperties();
+		plain.setNgsildOrQueryKey(",");
+		plain.setNgsildOrQueryValue(",");
+		plain.setEncloseQuery(false);
+		plain.setIncludeAttributeInList(false);
+		plain.setUseDotSeperator(false);
+		assertEquals("color==\"Red\";status==\"Active\"|color==\"Red\";status==\"Started\"",
+				new QueryParser(plain).toNgsiLdQuery(MyPojo.class, "status=Active,Started&color=Red").query());
+
+		assertEquals("status==\"Active\"|status==\"Started\"",
+				new QueryParser(plain).toNgsiLdQuery(MyPojo.class, "status=Active,Started").query(),
+				"A branch without AND needs no brackets.");
+	}
+
 	@ParameterizedTest
 	@MethodSource("scorpioQueries")
 	public void testScorpioQueryParsing(String tmForumQuery, QueryParams ngsiLdQuery, Class<?> targetClass) {
@@ -157,14 +184,14 @@ class QueryParserTest {
 	private static Stream<Arguments> scorpioQueries() {
 		return Stream.of(
 				// AND query with OR values: distributed as (base;attr==v1)|(base;attr==v2)
-				Arguments.of("status=Active,Started&color=Red", new QueryParams(null, null, "color==\"Red\";status==\"Active\"|color==\"Red\";status==\"Started\"", Map.of()), MyPojo.class),
+				Arguments.of("status=Active,Started&color=Red", new QueryParams(null, null, "(color==\"Red\";status==\"Active\")|(color==\"Red\";status==\"Started\")", Map.of()), MyPojo.class),
 				// OR query (TMForum ;): combined via combineParts, still uses valueList format
 				Arguments.of("status=Active;status=Started", new QueryParams(null, null, "status==(\"Active\",\"Started\")", Map.of()), MyPojo.class),
 				// AND query without OR values: unchanged
 				Arguments.of("sub.status=Active&status=Started&color=Red", new QueryParams(null, null, "sub[status]==\"Active\";status==\"Started\";color==\"Red\"", Map.of()), MyPojo.class),
 				Arguments.of("temperature<20&temperature>10", new QueryParams(null, null, "temperature<20;temperature>10", Map.of()), MyPojo.class),
 				// Same as first two but using .eq= syntax
-				Arguments.of("status.eq=Active,Started&color.eq=Red", new QueryParams(null, null, "color==\"Red\";status==\"Active\"|color==\"Red\";status==\"Started\"", Map.of()), MyPojo.class),
+				Arguments.of("status.eq=Active,Started&color.eq=Red", new QueryParams(null, null, "(color==\"Red\";status==\"Active\")|(color==\"Red\";status==\"Started\")", Map.of()), MyPojo.class),
 				Arguments.of("status.eq=Active;status.eq=Started", new QueryParams(null, null, "status==(\"Active\",\"Started\")", Map.of()), MyPojo.class)
 		);
 	}

@@ -23,6 +23,7 @@ import org.fiware.tmforum.common.test.AbstractApiIT;
 import org.fiware.tmforum.product.ProductOffering;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -50,6 +51,7 @@ public class ProductOfferingApiIT extends AbstractApiIT implements ProductOfferi
 	public final ProductOfferingApiTestClient productOfferingApiTestClient;
 	private final ProductSpecificationApiTestClient productSpecificationApiTestClient;
 	private final HttpClient httpClient;
+	private final GeneralProperties effectiveProperties;
 
 	private String message;
 	private ProductOfferingCreateVO productOfferingCreateVO;
@@ -65,6 +67,7 @@ public class ProductOfferingApiIT extends AbstractApiIT implements ProductOfferi
 		this.productOfferingApiTestClient = productOfferingApiTestClient;
 		this.productSpecificationApiTestClient = productSpecificationApiTestClient;
 		this.httpClient = httpClient;
+		this.effectiveProperties = generalProperties;
 	}
 
 	@MockBean(Clock.class)
@@ -600,6 +603,103 @@ public class ProductOfferingApiIT extends AbstractApiIT implements ProductOfferi
 		expectedProductOffering.setServiceLevelAgreement(null);
 
 		assertEquals(expectedProductOffering, updatedCatalog, message);
+	}
+
+	@Test
+	@DisabledIfSystemProperty(named = "micronaut.environments", matches = ".*orion-ld.*",
+			disabledReason = "Replacing an array on PATCH needs the read-merge-write update (replaceOnUpdate), which "
+					+ "relies on the upsert with replace semantics that Scorpio 6 provides; Orion-LD 1.9 rejects it for lists.")
+	public void patchProductOffering200_arrayReplaced() throws Exception {
+		ProductOfferingCreateVO createVO = ProductOfferingCreateVOTestExample.build().atSchemaLocation(null);
+		createVO.setProductSpecification(null);
+		createVO.setResourceCandidate(null);
+		createVO.setServiceCandidate(null);
+		createVO.setServiceLevelAgreement(null);
+		createVO.setProductOfferingTerm(List.of(
+				new ProductOfferingTermVO().name("License").description("a"),
+				new ProductOfferingTermVO().name("procurement").description("manual")));
+
+		HttpResponse<ProductOfferingVO> createResponse = callAndCatch(
+				() -> productOfferingApiTestClient.createProductOffering(null, createVO));
+		assertEquals(HttpStatus.CREATED, createResponse.getStatus());
+		String id = createResponse.body().getId();
+
+		ProductOfferingUpdateVO updateVO = new ProductOfferingUpdateVO();
+		updateVO.setProductOfferingTerm(List.of(
+				new ProductOfferingTermVO().name("License").description("b"),
+				new ProductOfferingTermVO().name("procurement").description("manual")));
+
+		HttpResponse<ProductOfferingVO> updateResponse = callAndCatch(
+				() -> productOfferingApiTestClient.patchProductOffering(null, id, updateVO));
+		assertEquals(HttpStatus.OK, updateResponse.getStatus());
+		assertEquals(updateVO.getProductOfferingTerm(), updateResponse.body().getProductOfferingTerm(),
+				"PATCH must replace the array, not append to it.");
+
+		HttpResponse<ProductOfferingVO> getResponse = callAndCatch(
+				() -> productOfferingApiTestClient.retrieveProductOffering(null, id, null));
+		assertEquals(updateVO.getProductOfferingTerm(), getResponse.body().getProductOfferingTerm());
+	}
+
+	@Test
+	public void listProductOffering200_multiValueFilter() throws Exception {
+		List<String> ids = new ArrayList<>();
+		for (String status : List.of("Active", "Launched", "Retired")) {
+			ProductOfferingCreateVO createVO = ProductOfferingCreateVOTestExample.build().atSchemaLocation(null);
+			createVO.setProductSpecification(null);
+			createVO.setResourceCandidate(null);
+			createVO.setServiceCandidate(null);
+			createVO.setServiceLevelAgreement(null);
+			createVO.setLifecycleStatus(status);
+			HttpResponse<ProductOfferingVO> createResponse = callAndCatch(
+					() -> productOfferingApiTestClient.createProductOffering(null, createVO));
+			assertEquals(HttpStatus.CREATED, createResponse.getStatus());
+			ids.add(createResponse.body().getId());
+		}
+
+		HttpResponse<List<Map>> response = httpClient.toBlocking().exchange(
+				HttpRequest.GET("/productOffering?lifecycleStatus=Active,Launched&limit=1"),
+				Argument.listOf(Map.class));
+		assertEquals(HttpStatus.PARTIAL_CONTENT, response.getStatus());
+		System.out.println("MULTIVALUE-PROBE encloseQuery=" + effectiveProperties.getEncloseQuery()
+				+ " splitOrValues=" + effectiveProperties.getSplitOrValues() + " replaceOnUpdate=" + effectiveProperties.isReplaceOnUpdate()
+				+ " page=" + response.body().size()
+				+ " X-Total-Count=" + response.header("X-Total-Count")
+				+ " X-Result-Count=" + response.header("X-Result-Count"));
+		assertEquals(1, response.body().size());
+		assertTrue(Integer.parseInt(response.header("X-Total-Count")) >= 2,
+				"total must count both Active and Launched offerings");
+	}
+
+	@Test
+	public void listProductOffering200_totalCountMatchesFilter() throws Exception {
+		for (String status : List.of("Active", "Active", "Launched", "Retired", "Retired", "Retired")) {
+			ProductOfferingCreateVO createVO = ProductOfferingCreateVOTestExample.build().atSchemaLocation(null);
+			createVO.setProductSpecification(null);
+			createVO.setResourceCandidate(null);
+			createVO.setServiceCandidate(null);
+			createVO.setServiceLevelAgreement(null);
+			createVO.setLifecycleStatus(status);
+			createVO.setIsBundle(status.equals("Launched"));
+			assertEquals(HttpStatus.CREATED, callAndCatch(
+					() -> productOfferingApiTestClient.createProductOffering(null, createVO)).getStatus());
+		}
+		for (String filter : List.of("", "lifecycleStatus=Active", "lifecycleStatus=Active,Launched",
+				"lifecycleStatus=Active,Launched,Retired", "isBundle=false", "isBundle=true",
+				"lifecycleStatus=Retired&isBundle=false", "lifecycleStatus=Active,Launched&isBundle=false",
+				"lifecycleStatus=Nope")) {
+			String sep = filter.isEmpty() ? "" : "&";
+			HttpResponse<List<Map>> full = httpClient.toBlocking().exchange(
+					HttpRequest.GET("/productOffering?limit=500" + sep + filter), Argument.listOf(Map.class));
+			HttpResponse<List<Map>> paged = httpClient.toBlocking().exchange(
+					HttpRequest.GET("/productOffering?limit=1" + sep + filter), Argument.listOf(Map.class));
+			HttpResponse<List<Map>> beyond = httpClient.toBlocking().exchange(
+					HttpRequest.GET("/productOffering?limit=1&offset=500" + sep + filter), Argument.listOf(Map.class));
+			System.out.println("COUNT-PROBE filter=[" + filter + "] actual=" + full.body().size()
+					+ " | limit1: total=" + paged.header("X-Total-Count") + " result=" + paged.header("X-Result-Count")
+					+ " status=" + paged.getStatus().getCode()
+					+ " | offset500: total=" + beyond.header("X-Total-Count") + " status=" + beyond.getStatus().getCode()
+					+ " | fullpage total=" + full.header("X-Total-Count"));
+		}
 	}
 
 	@Test
