@@ -317,7 +317,10 @@ public class QueryParser {
                             List<String> parts = new ArrayList<>();
                             if (!baseQuery.isEmpty()) parts.add(baseQuery);
                             parts.addAll(combo);
-                            return String.join(NGSI_LD_AND, parts);
+                            String branch = String.join(NGSI_LD_AND, parts);
+                            // brokers that insist on brackets (encloseQuery) reject AND and OR mixed without them,
+                            // e.g. Orion-LD: "mixed AND/OR operators - please use parenthesis"
+                            return generalProperties.getEncloseQuery() && parts.size() > 1 ? "(" + branch + ")" : branch;
                         })
                         .collect(Collectors.joining("|"));
             } else {
