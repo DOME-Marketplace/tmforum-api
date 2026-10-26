@@ -23,6 +23,7 @@ import org.fiware.tmforum.common.test.AbstractApiIT;
 import org.fiware.tmforum.product.ProductOffering;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -605,6 +606,9 @@ public class ProductOfferingApiIT extends AbstractApiIT implements ProductOfferi
 	}
 
 	@Test
+	@DisabledIfSystemProperty(named = "micronaut.environments", matches = ".*orion-ld.*",
+			disabledReason = "Replacing an array on PATCH needs the read-merge-write update (replaceOnUpdate), which "
+					+ "relies on the upsert with replace semantics that Scorpio 6 provides; Orion-LD 1.9 rejects it for lists.")
 	public void patchProductOffering200_arrayReplaced() throws Exception {
 		ProductOfferingCreateVO createVO = ProductOfferingCreateVOTestExample.build().atSchemaLocation(null);
 		createVO.setProductSpecification(null);

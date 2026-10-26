@@ -2,5 +2,4 @@ general:
   ngsildOrQueryValue: ";"
   ngsildOrQueryKey: ";"
   encloseQuery: true
-  replaceOnUpdate: true
   countHeader: NGSILD-Results-Count
