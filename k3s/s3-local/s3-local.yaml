@@ -1,0 +1,111 @@
+---
+# Local S3-compatible object storage for the integration tests (SeaweedFS, Apache-2.0).
+# Exposes the S3 API on port 9000 with the default credentials of the s3 configuration of
+# document-management (s3.endpoint, s3.accessKey, s3.secretKey).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: s3-local-config
+  labels:
+    app.kubernetes.io/name: s3-local
+    app.kubernetes.io/instance: s3-local
+data:
+  s3.json: |
+    {
+      "identities": [
+        {
+          "name": "admin",
+          "credentials": [
+            {
+              "accessKey": "minioadmin",
+              "secretKey": "minioadmin"
+            }
+          ],
+          "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+        }
+      ]
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: s3-local
+  labels:
+    app.kubernetes.io/name: s3-local
+    app.kubernetes.io/instance: s3-local
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
+      name: api
+  selector:
+    app.kubernetes.io/name: s3-local
+    app.kubernetes.io/instance: s3-local
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s3-local
+  labels:
+    app.kubernetes.io/name: s3-local
+    app.kubernetes.io/instance: s3-local
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: s3-local
+      app.kubernetes.io/instance: s3-local
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: s3-local
+        app.kubernetes.io/instance: s3-local
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: seaweedfs
+          image: "chrislusf/seaweedfs:4.47"
+          imagePullPolicy: IfNotPresent
+          args:
+            - server
+            - -dir=/data
+            - -s3
+            - -s3.port=9000
+            - -s3.config=/etc/seaweedfs/s3.json
+            - -master.volumeSizeLimitMB=64
+            - -volume.max=0
+          ports:
+            - name: api
+              containerPort: 9000
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: s3-config
+              mountPath: /etc/seaweedfs
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: s3-config
+          configMap:
+            name: s3-local-config

@@ -135,8 +135,8 @@
         <broker>scorpio</broker>
         <!-- caching to be used for testing, could be in-memory or redis -->
         <cache>in-memory</cache>
-        <!-- set to true to skip minio deployment: -DskipMinio=true -->
-        <skipMinio>false</skipMinio>
+        <!-- set to true to skip the local S3 deployment: -DskipS3Local=true -->
+        <skipS3Local>false</skipS3Local>
 
         <!-- tm-forum api links. -->
         <tmforum.api.url>${project.parent.basedir}/api/tm-forum/${project.artifactId}/api.json</tmforum.api.url>
@@ -656,13 +656,13 @@
                                     </configuration>
                                 </execution>
                                 <execution>
-                                    <id>apply-minio</id>
+                                    <id>apply-s3-local</id>
                                     <phase>pre-integration-test</phase>
                                     <goals>
                                         <goal>apply</goal>
                                     </goals>
                                     <configuration>
-                                        <manifests>${project.parent.basedir}/k3s/minio</manifests>
+                                        <manifests>${project.parent.basedir}/k3s/s3-local</manifests>
                                     </configuration>
                                 </execution>
                                 <execution>
@@ -718,12 +718,12 @@
                                     </configuration>
                                 </execution>
                                 <execution>
-                                    <id>apply-minio</id>
+                                    <id>apply-s3-local</id>
                                     <goals>
                                         <goal>apply</goal>
                                     </goals>
                                     <configuration>
-                                        <manifests>${project.parent.basedir}/k3s/minio</manifests>
+                                        <manifests>${project.parent.basedir}/k3s/s3-local</manifests>
                                     </configuration>
                                 </execution>
                             </executions>
@@ -733,10 +733,10 @@
             </build>
         </profile>
         <profile>
-            <id>skip-minio</id>
+            <id>skip-s3-local</id>
             <activation>
                 <property>
-                    <name>skipMinio</name>
+                    <name>skipS3Local</name>
                     <value>true</value>
                 </property>
             </activation>
@@ -748,7 +748,7 @@
                             <artifactId>k3s-maven-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>apply-minio</id>
+                                    <id>apply-s3-local</id>
                                     <phase>none</phase>
                                 </execution>
                             </executions>
