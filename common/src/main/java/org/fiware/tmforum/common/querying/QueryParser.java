@@ -58,6 +58,11 @@ public class QueryParser {
             "@schemaLocation", "atSchemaLocation");
 
     private static List<String> translateJsonLdReservedTokens(List<String> pathParts) {
+        // A top-level href always equals the entity id, so it is routed through the same id shortcut
+        // (supports comma-separated values). Nested paths such as relatedParty.href are left untouched.
+        if (pathParts.size() == 1 && "href".equals(pathParts.get(0))) {
+            return List.of("id");
+        }
         return pathParts.stream()
                 .map(p -> JSON_LD_RESERVED_TO_ENTITY_FIELD.getOrDefault(p, p))
                 .toList();
